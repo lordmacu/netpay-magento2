@@ -1,0 +1,23 @@
+<script>
+function createForm(mappingJson, token)
+{
+    var objkeys, keys, form;
+    form = "<form id='widgetPaymentForm' method='post' action=''>"; 
+    for (var apikey in mappingJson) {
+        objkeys = mappingJson[apikey];
+        keys = objkeys.split(',', value);
+        var value = token;
+        for (var key in keys) {
+            if (value.hasOwnProperty(key)) {
+                value = token[key];
+            } else {
+                value = '';
+                break;
+            }
+        }
+        form += "<input type='hidden' name='" + apikey + "' value='" + value + "' />";
+    }
+    return form + "</form>";
+}
+</script>
+    

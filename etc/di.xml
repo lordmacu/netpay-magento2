@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:noNamespaceSchemaLocation="../../../../../lib/internal/Magento/Framework/ObjectManager/etc/config.xsd">
+    <type name="Netpay\Payment\Logger\Handler">
+        <arguments>
+            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="Netpay\Payment\Logger\Logger">
+        <arguments>
+            <argument name="name" xsi:type="string">NetpayLogger</argument>
+            <argument name="handlers"  xsi:type="array">
+                <item name="system" xsi:type="object">Netpay\Payment\Logger\Handler</item>
+            </argument>
+        </arguments>
+    </type>
+    <preference for="Netpay\Payment\Api\ChargesApiManagementInterface" type="Netpay\Payment\Model\ChargesApiManagement" />
+    <preference for="Netpay\Payment\Api\CustomerLinkRepositoryInterface" type="Netpay\Payment\Model\CustomerLinkRepository" />
+    <preference for="Netpay\Payment\Api\Data\CustomerLinkInterface" type="Netpay\Payment\Model\CustomerLink" />
+    <preference for="Netpay\Payment\Api\Data\CustomerLinkSearchResultsInterface" type="Magento\Framework\Api\SearchResults" />
+    <preference for="Magento\Vault\Controller\Cards\DeleteAction" type="Netpay\Payment\Controller\Cards\DeleteAction" />
+</config>

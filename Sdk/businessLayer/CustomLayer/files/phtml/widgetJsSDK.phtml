@@ -1,0 +1,38 @@
+<?php
+$paymentpage = $this->getData();
+$plugIntFilesFolderPath = $data['paymentpage']->plugIntFilesFolderPath;
+$dir = $data['dir'];
+$mappingArray = $data['paymentpage']->mappingArray;
+$callbackUrls = $data['paymentpage']->callbackUrls;
+?>
+<?php echo $data['paymentpage']->jsFiles;?>
+<?php include ($dir.'/'.$plugIntFilesFolderPath.'/helperFunctions.html') ?>
+<script>
+var mappingJson = '<?php echo json_encode($mappingArray); ?>';
+jQuery('#customButton').on('click', function (e) {
+    e.preventDefault();
+    LatpayCheckout.open({
+        merchantid: 'test_ideatarmac' ,
+        publickey: 'TlbILw7ydhLPN0AZ' ,
+        amount: 100,
+        currency: 'AUD' ,
+        reference: 'Test1234_ecommerce' ,
+        description: 'Test1234_ecommerce',
+        token: function (token) {
+            console.log(token);
+            var form = createForm(mappingJson,token);
+            jQuery('#customButton').append(form);
+            if (token == '1') {
+                $("#widgetPaymentForm").attr("action", "<?php echo $callbackUrls['cancled']; ?>");
+                $("#widgetPaymentForm").submit();
+            } else if (token.Status == '1') {
+                $("#widgetPaymentForm").attr("action", "<?php echo $callbackUrls['failed']; ?>");
+                $("#widgetPaymentForm").submit();
+            } else if (token.Status == '0') {
+                $("#widgetPaymentForm").attr("action", "<?php echo $callbackUrls['success']; ?>");
+                $("#widgetPaymentForm").submit();
+            }
+        }
+    });
+});
+</script>

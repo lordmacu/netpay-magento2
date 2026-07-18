@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <payment>
+            <netpay>
+                <model>Netpay\Payment\Model\Netpay</model>
+                <enable>1</enable>
+                <payment_mode>test</payment_mode>
+                <title>Netpay Credit Card - The New Payment.</title>
+                <description>Secure payment with Netpay.</description>
+            </netpay>
+            <netpaycash>
+                <model>Netpay\Payment\Model\NetpayCash</model>
+                <active>0</active>
+                <title>Oxxopay - The New Payment.</title>
+                <description>Secure payment with Netpay.</description>
+            </netpaycash>
+        </payment>
+    </default>
+</config>

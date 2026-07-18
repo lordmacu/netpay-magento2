@@ -1,0 +1,54 @@
+<?php echo $block->getButtonHtml() ?>
+<span class="custom-indicator" id="custom_webhook_netpay_span">
+    <img class="processing_webhook" hidden="hidden" alt="Collecting" style="margin:0 5px" src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/process_spinner.gif')) ?>"/>
+    <br><br><span id="custom_webhook_netpay_message_span"></span>
+</span>
+<style>
+.error {
+    color: red;
+}
+</style>
+<script>
+require([
+    'jquery',
+    'prototype'
+], function(jQuery){
+    var customSpan = jQuery('#custom_webhook_netpay_span');
+    jQuery('#webhook_button').click(function () {
+        var params = {
+            'webhook' : jQuery('input[name="groups[netpay][groups][credentials_cash][fields][webhook][value]"]').val(),
+            'payment_mode' : jQuery('input[name="groups[netpay][groups][credentials_configuration][fields][payment_mode][value]"]:checked').val()
+        };
+        new Ajax.Request('<?= $escaper->escapeUrl($block->getCustomUrl()) ?>', {
+            parameters:     params,
+            loaderArea:     false,
+            asynchronous:   true,
+            onCreate: function() {
+                customSpan.find('.collected').hide();
+                customSpan.find('.processing_webhook').show();
+                jQuery('#custom_webhook_netpay_message_span').text('');
+            },
+            onSuccess: function(response) {
+                console.log(response);
+                customSpan.find('.processing_webhook').hide();
+                var resultText = '';
+                var data = '';
+                if (response.status > 200) {
+                    resultText = response.statusText;
+                } else {
+                    customSpan.find('.collected').show();
+                    data = JSON.parse(response.responseText);
+                    if (data.success) {
+                        jQuery('#custom_webhook_netpay_message_span').removeClass('error');
+                        jQuery('#custom_webhook_netpay_message_span').text(data.message);
+                    } else {
+                        jQuery('input[name="groups[netpay][groups][credentials_cash][fields][webhook][value]"]').val(data.url);
+                        jQuery('#custom_webhook_netpay_message_span').addClass('error');
+                        jQuery('#custom_webhook_netpay_message_span').text(data.message);
+                    }
+                }
+            }
+        });
+    });
+});
+</script>

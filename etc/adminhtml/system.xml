@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="payment" translate="label" sortOrder="130" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="netpay" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Netpay</label>
+                <comment><![CDATA[Netpay the payment method available for customers<br/>]]></comment>
+                <fieldset_css>netpay-section</fieldset_css>
+                <frontend_model>Magento\Paypal\Block\Adminhtml\System\Config\Fieldset\Payment</frontend_model>
+                <attribute type="displayIn">recommended_solutions</attribute>
+                <group id="credentials_configuration" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Netpay Configuration</label>
+                    <field id="enable" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Enable</label>
+                        <config_path>payment/netpay/enable</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    </field>
+                    <field id="payment_mode" translate="label" type="radios" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Mode</label>
+                        <source_model>Netpay\Payment\Model\Adminhtml\Source\PaymentMode</source_model>
+                        <config_path>payment/netpay/payment_mode</config_path>
+                    </field>
+                    <field id="public_key_test" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Public Key For Test</label>
+                        <config_path>payment/netpay/public_key_test</config_path>
+                    </field>
+                    <field id="secret_key_test" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Secret Key For Test</label>
+                        <config_path>payment/netpay/secret_key_test</config_path>
+                    </field>
+                    <field id="public_key_live" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Public Key For Live</label>
+                        <config_path>payment/netpay/public_key_live</config_path>
+                    </field>
+                    <field id="secret_key_live" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Secret Key For Live</label>
+                        <config_path>payment/netpay/secret_key_live</config_path>
+                    </field>
+                </group>
+                <group id="credentials_creditcard" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Netpay Credit Card</label>
+                    <field id="active" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Enable</label>
+                        <config_path>payment/netpay/active</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    </field>
+                    <field id="title" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Title</label>
+                        <config_path>payment/netpay/title</config_path>
+                    </field>
+                    <field id="description" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Description</label>
+                        <config_path>payment/netpay/description</config_path>
+                    </field>
+                </group>
+                <group id="credentials_cash" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>OxxoPay</label>
+                    <field id="active" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Enable</label>
+                        <config_path>payment/netpaycash/active</config_path>
+                        <frontend_model>Netpay\Payment\Block\System\Config\Form\Field\Disable</frontend_model>
+                        <backend_model>Netpay\Payment\Model\Adminhtml\System\Config\EnableInputField</backend_model>
+                    </field>
+                    <field id="button_id" translate="label" type="button" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label></label>
+                        <frontend_model>Netpay\Payment\Block\System\Config\Form\Field\Button</frontend_model>
+                    </field>
+                    <field id="title" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Title</label>
+                        <config_path>payment/netpaycash/title</config_path>
+                    </field>
+                    <field id="description" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Description</label>
+                        <config_path>payment/netpaycash/description</config_path>
+                    </field>
+                    <field id="webhook" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Webhook URL</label>
+                        <config_path>payment/netpaycash/webhook</config_path>
+                        <backend_model>Netpay\Payment\Model\Adminhtml\System\Config\DefaultHook</backend_model>
+                        <comment><model>Netpay\Payment\Model\Adminhtml\System\Config\Comment</model></comment>
+                    </field>
+                    <field id="webhook_button" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label></label>
+                        <frontend_model>Netpay\Payment\Block\System\Config\Form\Field\WebhookButton</frontend_model>
+                    </field>
+                </group>
+            </group>
+        </section>
+    </system>
+</config>

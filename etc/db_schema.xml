@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="sales_order" resource="sales">
+        <column xsi:type="varchar" name="token" nullable="true" length="255" comment="NetPay transaction token"/>
+    </table>
+    <table name="netpay_customer" resource="default" engine="innodb" comment="NetPay customer link (customer -> NetPay client id)">
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="int" name="customer_id" unsigned="true" nullable="false" comment="Magento customer ID"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="false" default="0" comment="Store the NetPay client id belongs to"/>
+        <column xsi:type="varchar" name="netpay_id" length="255" nullable="false" comment="NetPay client ID"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="NETPAY_CUSTOMER_CUSTOMER_ID_STORE_ID">
+            <column name="customer_id"/>
+            <column name="store_id"/>
+        </constraint>
+    </table>
+</schema>

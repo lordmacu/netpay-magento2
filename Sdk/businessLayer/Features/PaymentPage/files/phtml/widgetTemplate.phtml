@@ -1,0 +1,8 @@
+<?php 
+$data = $this->getData();
+$dir = $data['dir'];
+$templates = $data['paymentpage']->templates;
+?>
+<?php foreach($templates as $path) : ?>
+    <?php include ($dir.'/'.$path) ?>
+<?php endforeach; ?>

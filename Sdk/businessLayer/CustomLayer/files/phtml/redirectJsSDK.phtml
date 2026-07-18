@@ -1,0 +1,10 @@
+<?php
+$countrycode = $block->getData('countrycode');
+$token = $block->getData('ordertoken');
+?>
+AfterPay.initialize({
+    countryCode: '<?php echo $countrycode; ?>'
+}),
+AfterPay.redirect({
+    token: "<?php echo $token['token']; ?>"
+})

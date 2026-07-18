@@ -1,0 +1,159 @@
+<!-- ko if: isActive() -->
+<div id="netpay-card-form" class="payment-method" data-bind="css: {'_active': (getCode() == isChecked())}">
+    <div class="payment-method-title field choice">
+        <input type="radio"
+            id= "esteeselid"
+            name="payment[method]"
+            class="radio"
+            data-bind="attr: {'id': getCode()}, value: getCode(), checked: isChecked, click: selectPaymentMethod, visible: isRadioButtonVisible()">
+        <label data-bind="attr: {'for': getCode()}" class="label"><span data-bind="text: getTitle()"></span></label>
+    </div>
+    <div class="payment-method-content">
+        <!-- ko foreach: getRegion('messages') -->
+        <!-- ko template: getTemplate() --><!-- /ko -->
+        <!--/ko-->
+        <div class="description-field">
+            <span data-bind="html: getDescription()"></span>
+        </div>
+        <div class="payment-method-billing-address">
+            <!-- ko foreach: $parent.getRegion(getBillingAddressFormName()) -->
+            <!-- ko template: getTemplate() --><!-- /ko -->
+            <!--/ko-->
+        </div>
+            <fieldset id="selectMSI" class="fieldset fields ccmsi">
+            <div class="field required">
+                <label for="msi-rules" class="label">
+                    <span><!-- ko i18n: 'Meses sin Intereses'--><!-- /ko --></span>
+                </label>
+                <div class="control">
+                    <select name="payment[subscription_id]" class="select input-text required-entry" 
+                        data-bind="
+                            attr: {id: getCode()+'_payment_msi_id'},
+                            options: getMsiValues(),
+                            optionsValue: 'value',
+                            optionsText: 'type',
+                            ">
+                    </select>
+                </div>
+            </div>
+            </fieldset>
+            <fieldset id="fieldsetCheck" class="fieldset fields ccmsi">
+                <div class="field choice">
+                    <input type="checkbox"
+                        id= "saveccCheck"
+                        class="radio">
+                    <label class="label"><span>Guardar tarjeta</span></label>
+                </div>
+                <div id="containerCreditCard">
+                    <form id="creditCardForm">
+                        <div style="margin: 15px 0;">
+                            <label for="cardNumber">Número de Tarjeta:</label>
+                            <input type="text" id="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" required><br>
+                        </div>
+                        <div style="margin: 15px 0;">
+                            <label for="expirationDate">Fecha de Expiración (MM/YY):</label>
+                            <input type="text" id="expirationDate" placeholder="MM/YY" maxlength="5" required><br>
+                        </div>
+                        <div style="margin: 15px 0;">
+                            <label for="cvv">CVV:</label>
+                            <input type="password" id="cvv" placeholder="CVV" maxlength="4" required><br>
+                        </div>
+                        <div style="margin: 15px 0; text-align: end;">
+                            <button id="btnSaveCard" class="action primary checkout" type="submit">Guardar Tarjeta</button>
+                        </div>
+                    </form>
+                </div>
+            </fieldset>
+            <!-- ko if: showSaveCc() -->
+            <fieldset id="fieldsetSavecc" class="fieldset fields savecc">
+                <div class="field required">
+                    <label for="savecc-rules" class="label">
+                        <span><!-- ko i18n: 'Save Cc'--><!-- /ko --></span>
+                    </label>
+                    <div class="control">
+                        <select name="payment[save_cards]" class="select input-text required-entry" 
+                            data-bind="
+                                attr: {id: getCode()+'_save_card_id'},
+                                options: getSavingCondition(),
+                                optionsValue: 'value',
+                                optionsText: 'type'
+                                ">
+                        </select>
+                        </div>
+                    </div>   
+            </fieldset>
+            <!--/ko-->
+            
+        <!-- ko if: showCVV() -->
+            <fieldset class="fieldset fields cc">
+                <div class="field required">
+                    <label for="cc-rules" class="label">
+                        <span><!-- ko i18n: 'Tarjetas guardadas'--><!-- /ko --></span>
+                    </label>
+                    <div class="control">
+                        <select name="payment[credit_card_id]" class="select input-text required-entry" 
+                            data-bind="
+                                attr: {id: getCode()+'_payment_cc_id'},
+                                options: getCcValues(),
+                                optionsValue: 'value',
+                                optionsText: 'type',
+                                optionsCaption: $t('--Selecciona una tarjeta--'),
+                                event: {change: onCreditCardSelect()}
+                                ">
+                        </select>
+                    </div>   
+                </div>
+            </fieldset>
+
+            <div class="field cvv required" data-bind="attr: {id: getCode() + '_cc_type_cvv_div'}">
+                <label data-bind="attr: {for: getCode() + '_cc_cid'}" class="label">
+                    <span><!-- ko i18n: 'CVV'--><!-- /ko --></span>
+                </label>
+                <div class="control">
+                    <input type="password" data-bind="attr: {id: getCode() + '_cc_cid'}">
+                </div>
+            </div>
+        <!--/ko-->    
+        <div class="checkout-agreements-block">
+            <!-- ko foreach: $parent.getRegion('before-place-order') -->
+            <!-- ko template: getTemplate() --><!-- /ko -->
+            <!--/ko-->
+        </div>
+
+        <div id="ErrorConfirm3DS">
+            <span style="color: red; font-size: medium; display: block; text-align: center;">Ha ocurrido un error, por favor. Intente realizar el pedido de nuevo</span>
+        </div>
+
+        <div data-bind="css: {untouchabled: !isPlaceOrderActionAllowed()}" id="netpay-form"></div>
+        <div style="margin-top: 10px; display: flex; justify-content: space-between;">
+            <div>
+                <button id="deleteBtn" class="action primary checkout">
+                    <span>Eliminar tarjeta</span>
+                </button>
+            </div>
+            <div>
+                <button class="action primary checkout"
+                        type="submit"
+                        data-bind="
+                        click: placeOrder,
+                        attr: {title: $t('Place Order')},
+                        css: {disabled: !isPlaceOrderActionAllowed()},
+                        enable: (getCode() == isChecked()),
+                        attr: {id: getCode() + '_placeorder'}
+                        "
+                        disabled>
+                    <span data-bind="i18n: 'Ordenar'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- /ko -->
+
+<style>
+    .untouchabled {
+        opacity: .8;
+        pointer-events: none;
+    }
+</style>

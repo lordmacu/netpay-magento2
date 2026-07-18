@@ -1,0 +1,146 @@
+<?php
+/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \Magento\Framework\Escaper $escaper */
+$response = $block->getAdditionalInfo();
+?>
+<?php if (!empty($response->paymentMethod) && $response->paymentMethod == 'oxxopay') : ?>
+<div class="container">
+<div class="cash">
+  <div class="row header-cash" style="background-image: url(<?= $escaper->escapeUrl($block->getOndaUrl()) ?>);">
+    <div class="container-imgHeader">
+        <img src="<?= $escaper->escapeUrl($block->getSuccessOxxoPayUrl()) ?>" alt="">
+    </div>
+    <div class="container-textHeader">
+        <div class="container-text1">
+            <h3 class="text1"><?= $escaper->escapeHtml(__('¡Estás muy cerca de tener tu compra!')) ?></h3>
+        </div>
+        <div>
+            <h3 class="text2">
+                <?= $escaper->escapeHtml(__('Paga ')) ?><?= $escaper->escapeHtml('$' . number_format((float) $response->amount, 2, '.', ',')) ?><?= $escaper->escapeHtml(__(' en cualquier tienda OXXO')) ?>
+            </h3>
+        </div>
+    </div>
+  </div>
+  <div class="row">
+    <h3 class="heading"><?= $escaper->escapeHtml(__('Conoce tu número de referencia, paga y disfruta')) ?></h3>
+    <div class="rowM">
+    <?php if (isset($response->paymentSource->oxxoPay->reference)) : ?>
+        <div class="col-6M">
+        <div class="refrence_no_cash">
+            <p class="line1"><?= $escaper->escapeHtml(__('Número de referencia:')) ?></p>
+            <p class="line2"><?= $escaper->escapeHtml($response->paymentSource->oxxoPay->reference) ?></p>
+            <p class="line3"><?= $escaper->escapeHtml(__('Expira el ')) ?><?= $escaper->escapeHtml(date("d/m/Y", strtotime((string) $response->paymentSource->oxxoPay->expirationDate))) ?></p>
+        </div>
+    </div>
+    <?php endif; ?>
+    <div class="col-6M centerM">
+        <div class="refrence_no_image mtRM container-imgOxxo">
+            <img src="<?= $escaper->escapeUrl($block->getOxxopayUrl()) ?>" alt="">
+        </div>
+    </div>
+  </div>
+  </div>
+  <div class="row">
+        <div class="marginTB75">
+        <div class="cash-para">
+            <p class="para1"><?= $escaper->escapeHtml(__('1. Visita tu tienda OXXO más cercana y pide al cajero pagar en efectivo con OXXO Pay')) ?></p>
+            <p class="para1"><?= $escaper->escapeHtml(__('2. Dale tu número de referencia y revisa que la información en pantalla sea correcta')) ?></p>
+            <p class="para1"><?= $escaper->escapeHtml(__('3. Paga en efectivo')) ?> <label class="parastar"><?= $escaper->escapeHtml(__('*')) ?> </label></p>
+        </div>
+        <div class="cash-para-star">
+            <p class="para2"><?= $escaper->escapeHtml(__('También te enviamos esta información por correo')) ?></p>
+            <p class="para4"><span class="parastar"><?= $escaper->escapeHtml(__('* ')) ?> </span> <?= $escaper->escapeHtml(__('Se te cobrará una comisión establecida por OXXO')) ?></p>
+        </div>
+        </div>
+  </div>
+</div>
+</div>
+<?php endif ?>
+<?php if (!empty($response->paymentMethod) && $response->paymentMethod == 'card') : ?>
+<?php
+// Build the receipt rows as label => value pairs so every value is escaped uniformly below.
+$rows = [];
+if (isset($response->paymentSource->oxxopay->reference)) {
+    $rows[] = [__('Reference'), $response->paymentSource->oxxopay->reference];
+}
+if (!empty($block->getOrder()->getCreatedAt()) && !empty($response->timeOut)) {
+    $rows[] = [__('Fecha'), date("d/m/Y", strtotime((string) $response->timeOut))];
+}
+if (!empty($block->getOrder()->getId())) {
+    $rows[] = [__('No. de orden'), $block->getOrder()->getId()];
+}
+if (!empty($response->paymentMethod)) {
+    $rows[] = [__('Método de pago'), $response->paymentMethod];
+}
+if (!empty($response->orderId)) {
+    $rows[] = [__('No. de referencia'), $response->orderId];
+}
+if (!empty($response->spanRouteNumber)) {
+    $rows[] = [__('Tarjeta'), '**** ' . $response->spanRouteNumber];
+}
+if (!empty($response->authCode)) {
+    $rows[] = [__('Código de autorización'), $response->authCode];
+}
+if (!empty($response->responseCode)) {
+    $rows[] = [__('Código de referencia'), $response->responseCode];
+}
+if (!empty($response->cardHolderName)) {
+    $rows[] = [__('Titular de la tarjeta'), $response->cardHolderName];
+}
+if (!empty($response->bankName)) {
+    $rows[] = [__('Banco'), $response->bankName];
+}
+if (!empty($response->billing->merchantReferenceCode)) {
+    $rows[] = [__('Merchant Reference Code'), $response->billing->merchantReferenceCode];
+}
+if (!empty($response->merchantReferenceCode)) {
+    $rows[] = [__('Merchant Reference Code'), $response->merchantReferenceCode];
+}
+if (!empty($response->responseMsg)) {
+    $rows[] = [__('Estatus'), $response->responseMsg];
+}
+?>
+<div class="container">
+<div class="card">
+<div class="row">
+    <div class="succss_image heading">
+        <img height="610" src="<?= $escaper->escapeUrl($block->getSuccessImageUrl()) ?>" alt="">
+    </div>
+</div>
+  <div class="row">
+  <h3 class="heading"><?= $escaper->escapeHtml(__('Se ha enviado una copia del comprobante a tu correo')) ?></h3>
+  </div>
+  <div class="row">
+    <div class="total-amount">
+        <div class="amount">
+            <p class="line1card">
+            <?php if (!empty($response->amount)) : ?>
+                <span class="left_value"><?= $escaper->escapeHtml(__('Total')) ?></span>
+                <span class="right_value"><?= $escaper->escapeHtml($block->getCurrentCurrencySymbol() . $response->amount) ?></span><br>
+            <?php endif; ?>
+            </p>
+        </div>
+    </div>
+  </div>
+  <div class="row">
+        <div class="card-para-text">
+        <div class="card-para">
+          <p class="card_allvalue"><hr>
+            <?php foreach ($rows as $row) : ?>
+                <span class="left_value"><?= $escaper->escapeHtml($row[0]) ?>:</span>
+                <span class="right_value"><?= $escaper->escapeHtml($row[1]) ?></span><br>
+            <?php endforeach; ?>
+          </p>
+        </div>
+        </div>
+  </div>
+  <div class="row">
+  <h2 class="heading"><?= $escaper->escapeHtml(__('iGracias por tu compra!')) ?></h2>
+  </div>
+</div>
+</div>
+
+<div class="row">
+<center><span class="footer"><?= $escaper->escapeHtml(__('Checkout es una herramienta de cobranza desarrollada por')) ?></span> <span><?= $escaper->escapeHtml(__('Netpay.')) ?></span></center>
+</div>
+<?php endif ?>

@@ -1,0 +1,236 @@
+<?php if($this->showAddCardButton()): ?>
+<button type="button" id="openModel" class="custom_model_popup">Add Card</button>
+<script>
+require(
+    [
+        'jquery',
+        'Magento_Ui/js/modal/modal'
+    ],
+    function($,modal) {
+        var options = {
+            type: 'popup',
+            responsive: true,
+            innerScroll: true,
+            title: 'Add Card',
+            closeText: 'Close',
+            buttons: [{
+                text: $.mage.__('Submit'),
+                class: '',
+                click: function (data) {
+                    //var form_data =$("#form-validate").serialize();
+                    $.getScript("https://docs.netpay.mx/cdn/v1.3/netpay.min.js", function() {
+                        let cardInformation = {
+                            cardNumber: $("#cardNumber").val().replace(/\s+/g, ''),
+                            expMonth: $("#expiry_month").val(),
+                            expYear: $("#expiry_year").val(),
+                            cvv2: $("#cvv").val(),
+                        };
+
+                        NetPay.setApiKey("<?= $escaper->escapeJs($block->getPublicKey()) ?>");
+                        NetPay.setSandboxMode(<?= $block->isSandboxMode() ? 'true' : 'false' ?>);
+
+                        var validateNumber = NetPay.card.validateNumber(cardInformation.cardNumber);
+                        var validateExpiry = NetPay.card.validateExpiry(cardInformation.expMonth, cardInformation.expYear);
+                        var validateCVV = NetPay.card.validateCVV(cardInformation.cvv2, cardInformation.cardNumber);
+                        var validateNumberLength = NetPay.card.validateNumberLength(cardInformation.cardNumber);
+
+                        NetPay.token.create(cardInformation, success, error);
+
+                        function success(e) {
+                            console.log("Token created successfully");
+                            console.log(e);
+                            var response = $.parseJSON(e.message.data);
+                            jQuery.ajax({
+                                url: "<?= $escaper->escapeUrl($block->getUrl('netpay/payment/savecard')) ?>",
+                                type: 'POST',
+                                data : $("#form-validate").serialize()+"&token="+response.token,
+                                dataType: 'json',
+                                success: function(data){
+                                    console.log(data);
+                                    location.reload();
+                                },
+                                error: function(result){
+                                    console.log('no response !');
+                                }
+                            });
+                        }
+
+                        function error(e) {
+                            console.log("Something went wrong!");
+                            console.log(e);
+                        }
+                    });
+                    this.closeModal();
+
+                }
+            }],
+            /**
+             * Escape key press handler,
+             * close modal window
+             */
+            escapeKey: function () {
+                if (this.options.isOpen && this.modal.find(document.activeElement).length ||
+                    this.options.isOpen && this.modal[0] === document.activeElement) {
+                    this.closeModal();
+                }
+            }
+        };
+        var popup = modal(options, $('#myModel'));
+        $("#openModel").on("click",function(){
+            $('#myModel').modal('openModal');
+        });
+    }
+);
+</script> 
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="<?= $escaper->escapeUrl($block->getViewFileUrl('Netpay_Payment::js/payment/jquery.payform.min.js')) ?>" charset="utf-8"></script>
+<script src="<?= $escaper->escapeUrl($block->getViewFileUrl('Netpay_Payment::js/payment/script.js')) ?>"></script>
+<div style="margin-top: 15px;">
+    <div id="myModel" class="creditCardForm">
+        <form action="<?= $escaper->escapeUrl($block->getUrl('netpay/payment/savecard')) ?>" method="post" id="form-validate" enctype="multipart/form-data" autocomplete="off" data-mage-init='{"validation":{}}' data-hasrequired="<?= $escaper->escapeHtmlAttr(__('* Required Fields')) ?>">
+        <div class="payment">
+        <div class="form-group owner">
+                        <label for="owner">Owner</label>
+                        <input type="text" class="form-control" id="owner" name="customer_name">
+                    </div>
+                    <div class="form-group CVV">
+                        <label for="cvv">CVV</label>
+                        <input type="text" class="form-control" id="cvv" name="cvv">
+                    </div>
+                    <div class="form-group" id="card-number-field">
+                        <label for="cardNumber">Card Number</label>
+                        <input type="text" class="form-control" id="cardNumber" name="cardNumber">
+                    </div>
+                    <div class="form-group" id="expiration-date">
+                        <label>Expiration Date</label>
+                        <select name="expiry_month" id="expiry_month">
+                            <option value="01">January</option>
+                            <option value="02">February </option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                        <select name="expiry_year" id="expiry_year">
+                            <?php $startYear = (int) date('Y'); ?>
+                            <?php for ($y = $startYear; $y <= $startYear + 15; $y++) : ?>
+                            <option value="<?= $escaper->escapeHtmlAttr(substr((string) $y, -2)) ?>"><?= $escaper->escapeHtml((string) $y) ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+                    <input type="hidden" name="card_type" id="card_type" value="">
+                    <div class="form-group" id="credit_cards">
+                        <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('Netpay_Payment::images/visa.jpg')) ?>" id="visa" alt="Visa">
+                        <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('Netpay_Payment::images/mastercard.jpg')) ?>" id="mastercard" alt="Mastercard">
+                        <img src="<?= $escaper->escapeUrl($block->getViewFileUrl('Netpay_Payment::images/amex.jpg')) ?>" id="amex" alt="Amex">
+                    </div>
+                </div>    
+        </form>
+    </div>
+</div>
+<style>
+.creditCardForm {
+    max-width: 700px;
+    background-color: #fff;
+    margin: 5px auto;
+    overflow: hidden;
+    padding: 25px;
+    color: #4c4e56;
+}
+
+.creditCardForm label {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.creditCardForm .heading h1 {
+    text-align: center;
+    font-family: 'Open Sans', sans-serif;
+    color: #4c4e56;
+}
+
+.creditCardForm .payment {
+    float: left;
+    font-size: 18px;
+    padding: 10px 25px;
+    margin-top: 20px;
+    position: relative;
+}
+
+.creditCardForm .payment .form-group {
+    float: left;
+    margin-bottom: 15px;
+}
+
+.creditCardForm .payment .form-control {
+    line-height: 40px;
+    height: auto;
+    padding: 0 16px;
+}
+
+.creditCardForm .owner {
+    width: 63%;
+    margin-right: 10px;
+}
+
+.creditCardForm .CVV {
+    width: 35%;
+}
+
+.creditCardForm #card-number-field {
+    width: 100%;
+}
+
+.creditCardForm #expiration-date {
+    width: 49%;
+}
+
+.creditCardForm #credit_cards {
+    width: 50%;
+    margin-top: 25px;
+    text-align: right;
+}
+
+.creditCardForm #pay-now {
+    width: 100%;
+    margin-top: 25px;
+}
+
+.creditCardForm .payment .btn {
+    width: 100%;
+    margin-top: 3px;
+    font-size: 24px;
+    background-color: #2ec4a5;
+    color: white;
+}
+
+.creditCardForm .payment select {
+    padding: 10px;
+    margin-right: 15px;
+    height: 40px;
+}
+
+.transparent {
+    opacity: 0.2;
+}
+
+@media(max-width: 650px) {
+    .creditCardForm .owner,
+    .creditCardForm .CVV,
+    .creditCardForm #expiration-date,
+    .creditCardForm #credit_cards {
+        width: 100%;
+    }
+    .creditCardForm #credit_cards {
+        text-align: left;
+    }
+}
+</style>
+<?php endif; ?>

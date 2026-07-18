@@ -1,0 +1,57 @@
+<?php echo $block->getButtonHtml() ?>
+<span class="custom-indicator" id="custom_netpay_span">
+    <img class="processing" hidden="hidden" alt="Collecting" style="margin:0 5px" src="<?= $escaper->escapeUrl($block->getViewFileUrl('images/process_spinner.gif')) ?>"/>
+    <br><br><span id="custom_netpay_message_span"></span>
+</span>
+<style>
+.error {
+    color: red;
+}
+</style>
+<script>
+require([
+    'jquery',
+    'prototype'
+], function(jQuery){
+    var customSpan = jQuery('#custom_netpay_span');
+    jQuery('#activate_cash').click(function () {
+        new Ajax.Request('<?= $escaper->escapeUrl($block->getCustomUrl()) ?>', {
+            loaderArea:     false,
+            asynchronous:   true,
+            onCreate: function() {
+                customSpan.find('.collected').hide();
+                customSpan.find('.processing').show();
+                jQuery('#custom_netpay_message_span').text('');
+            },
+            onSuccess: function(response) {
+                console.log(response);
+                customSpan.find('.processing').hide();
+                var resultText = '';
+                var data = '';
+                if (response.status > 200) {
+                    resultText = response.statusText;
+                } else {
+                    customSpan.find('.collected').show();
+                    data = JSON.parse(response.responseText);
+                    if (data.success) {
+                        console.log(data)
+                        if (typeof data.oxxoPayEnable !== 'undefined') {
+                            jQuery('input[name="groups[netpay][groups][credentials_cash][fields][active][value]"]').val(data.oxxoPayEnable);
+                            if (data.oxxoPayEnable == 'Yes') {
+                                resultText = 'OxxoPay is active!';
+                            } else {
+                                resultText = 'OxxoPay is deactive!';
+                            }
+                        }
+                        jQuery('#custom_netpay_message_span').removeClass('error');
+                        jQuery('#custom_netpay_message_span').text(resultText);
+                    } else {
+                        jQuery('#custom_netpay_message_span').addClass('error');
+                        jQuery('#custom_netpay_message_span').text(data.message);
+                    }
+                }
+            }
+        });
+    });
+});
+</script>

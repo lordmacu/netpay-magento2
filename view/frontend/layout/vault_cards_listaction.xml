@@ -1,0 +1,10 @@
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="content">
+            <block class="Netpay\Payment\Block\Customer\Addcard" name="netpay.card.button" template="Netpay_Payment::customer_account/button.phtml" before="-"/>
+            <referenceBlock name="vault.cards.list">
+                <block class="Netpay\Payment\Block\Customer\CardRenderer" name="netpay.card.renderer" template="Netpay_Payment::customer_account/credit_card.phtml"/>
+            </referenceBlock>
+        </referenceContainer>
+    </body>
+</page>

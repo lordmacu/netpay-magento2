@@ -1,0 +1,20 @@
+{
+    "sales_order": {
+        "column": {
+            "token": true
+        }
+    },
+    "netpay_customer": {
+        "column": {
+            "entity_id": true,
+            "customer_id": true,
+            "netpay_id": true,
+            "store_id": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "NETPAY_CUSTOMER_CUSTOMER_ID_NETPAY_ID": true,
+            "NETPAY_CUSTOMER_CUSTOMER_ID_STORE_ID": true
+        }
+    }
+}
