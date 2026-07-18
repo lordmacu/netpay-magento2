@@ -2,7 +2,7 @@
     "name": "netpay/module-payment",
     "description": "NetPay payment method for Magento 2 — community port compatible with Magento 2.4.8 and PHP 8.4. Bundles the NetPay PHP SDK (self-contained under Sdk/).",
     "type": "magento2-module",
-    "license": "proprietary",
+    "license": "PolyForm-Noncommercial-1.0.0",
     "require": {
         "php": ">=8.1",
         "magento/framework": ">=103.0.0",

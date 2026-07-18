@@ -162,5 +162,15 @@ See [CHANGELOG.md](CHANGELOG.md) for the full list of fixes (~40 across 6 audit 
 
 ## License / provenance
 
-This is a **community port** of NetPay's official Magento module (`license: proprietary`). It bundles
-NetPay's PHP SDK. It is provided as-is for interoperability; NetPay owns the underlying integration.
+Licensed under **PolyForm Noncommercial 1.0.0** — see [LICENSE](LICENSE). In short:
+
+- **Free for noncommercial use**, with **attribution** (keep the notice) and please **let the author
+  know** you're using it (open an issue or contact [@lordmacu](https://github.com/lordmacu)).
+- **Commercial / for-profit use requires a separate paid commercial license** — contact
+  [@lordmacu](https://github.com/lordmacu).
+
+> **Provenance:** this is a community **port** of NetPay's official Magento module and it **bundles
+> NetPay's PHP SDK** (`Sdk/`). Those underlying components are NetPay's proprietary property and are
+> subject to NetPay's own terms. The license above is granted over the **port contributions** only —
+> it does not grant rights to NetPay's software; obtain the appropriate authorization from NetPay for
+> your use case. (Not legal advice.)
