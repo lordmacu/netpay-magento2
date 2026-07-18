@@ -4,6 +4,13 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.2
+
+- **Refunds:** admin online credit memos now refund through NetPay
+  (`POST /v3/transactions/{id}/refund`). NetPay's endpoint refunds the full transaction (no
+  amount), so **full refunds only** — partial refunds are rejected. Scoped to the order's store
+  (multi-store).
+
 ## 1.0.1
 
 - **Anti-fraud:** the card charge now sends the shopper's client IP as
@@ -69,6 +76,7 @@ reference implementation.
 - The payment method still extends the deprecated `Magento\Payment\Model\Method\AbstractMethod`
   (charging is done out-of-band via the webapi controller); migration to the Payment Provider
   Gateway is planned.
-- No admin-side refund/capture yet (the SDK supports it; not wired into Magento).
+- Refunds are **full only** (NetPay's refund endpoint takes no amount); partial refunds are not
+  supported. Capture is online at charge time.
 - The ThreatMetrix device fingerprint (`deviceFingerPrint`/`sessionId`) sent by the WooCommerce
   plugin is not yet forwarded on the charge (client IP `zoneAware` is — see 1.0.1).

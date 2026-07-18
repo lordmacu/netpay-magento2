@@ -23,6 +23,7 @@ so there is no separate `netpay/custom` Composer dependency. Guzzle is not vendo
   store** so cards never leak across stores / NetPay accounts.
 - **Webhook receiver** — OXXO settlement + generic card reconciliation (re-verifies the transaction
   against the gateway; idempotent).
+- **Refunds** — admin online credit memos refund through NetPay (full refunds).
 - **Multi-store aware** — every config read (keys / mode / gateway host) is scoped to the order's
   store, including the webhook (which carries no store context) and the charge.
 - **Friendly error messages** — ~60 raw gateway responses mapped to friendly Spanish messages.
@@ -154,7 +155,8 @@ vendor/bin/phpcs --standard=Magento2 --severity=10 --ignore="*/Sdk/*" app/code/N
 
 - Extends the deprecated `Magento\Payment\Model\Method\AbstractMethod` (works on 2.4.8; charging is
   out-of-band). Migration to the Payment Provider Gateway is planned.
-- No admin-side refund/capture yet (the SDK supports it; not wired into Magento).
+- Refunds are **full only** (NetPay's refund endpoint takes no amount); partial refunds are not
+  supported. Capture is online at charge time.
 - The ThreatMetrix device fingerprint (`deviceFingerPrint`/`sessionId`) sent by the WooCommerce
   plugin is not yet forwarded on the charge (the client IP `zoneAware` is).
 
