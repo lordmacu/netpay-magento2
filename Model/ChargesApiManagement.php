@@ -31,6 +31,7 @@ use Netpay\Payment\Model\CustomConfigProvider;
 use Magento\Framework\App\Action\Context as Context;
 use Magento\Sales\Model\ResourceModel\Sale\Collection as Salesorder;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollectionFactory;
+use Magento\Framework\HTTP\PhpEnvironment\RemoteAddress;
 
 class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementInterface
 {
@@ -110,6 +111,9 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
     /** @var OrderCollectionFactory */
     private $orderCollectionFactory;
 
+    /** @var RemoteAddress */
+    private $remoteAddress;
+
     /**
      * @param DataHelper $dataHelper
      * @param StoreManagerInterface $storeManager
@@ -141,7 +145,8 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
         Context $context,
         Salesorder $salesorder,
         CustomConfigProvider $customConfigProvider,
-        OrderCollectionFactory $orderCollectionFactory
+        OrderCollectionFactory $orderCollectionFactory,
+        RemoteAddress $remoteAddress
     ) {
         $this->dataHelper = $dataHelper;
         $this->configHelper = $configHelper;
@@ -165,6 +170,7 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
         $this->orderManagement = $orderManagement;
         $this->customConfigProvider = $customConfigProvider;
         $this->orderCollectionFactory = $orderCollectionFactory;
+        $this->remoteAddress = $remoteAddress;
     }
 
     /**
@@ -220,6 +226,11 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
 
             $deviceArray = json_decode($deviceInformation);
             $others->deviceInformation = $deviceArray;
+
+            // Anti-fraud: send the shopper's client IP (matches NetPay's WooCommerce plugin,
+            // a signal the Decision Manager uses).
+            $clientIp = $this->remoteAddress->getRemoteAddress() ?: '0.0.0.0';
+            $others->zoneAware = (object) ['clientIPAdress' => (string) $clientIp];
 
             if ($cardSelected) {
                 $saveCc = false;

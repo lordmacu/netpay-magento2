@@ -4,6 +4,15 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.1
+
+- **Anti-fraud:** the card charge now sends the shopper's client IP as
+  `zoneAware.clientIPAdress` (a signal NetPay's Decision Manager consumes), matching the WooCommerce
+  plugin. Wired through all three SDK layers (getCharges + mapping + the `Charges` model so the field
+  is not dropped on serialization).
+- **Static analysis:** adopted **phpstan level 4** with a baseline (`phpstan.neon` +
+  `phpstan-baseline.neon`); phpstan reports no errors and new code is held to level 4.
+
 ## 1.0.0
 
 ### Compatibility (2.4.8 / PHP 8.4)
@@ -61,5 +70,5 @@ reference implementation.
   (charging is done out-of-band via the webapi controller); migration to the Payment Provider
   Gateway is planned.
 - No admin-side refund/capture yet (the SDK supports it; not wired into Magento).
-- Extra anti-fraud signals sent by the WooCommerce plugin (client IP `zoneAware`, device
-  fingerprint) are not yet forwarded on the charge.
+- The ThreatMetrix device fingerprint (`deviceFingerPrint`/`sessionId`) sent by the WooCommerce
+  plugin is not yet forwarded on the charge (client IP `zoneAware` is — see 1.0.1).

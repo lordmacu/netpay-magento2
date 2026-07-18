@@ -155,8 +155,8 @@ vendor/bin/phpcs --standard=Magento2 --severity=10 --ignore="*/Sdk/*" app/code/N
 - Extends the deprecated `Magento\Payment\Model\Method\AbstractMethod` (works on 2.4.8; charging is
   out-of-band). Migration to the Payment Provider Gateway is planned.
 - No admin-side refund/capture yet (the SDK supports it; not wired into Magento).
-- Extra anti-fraud signals the WooCommerce plugin sends (client IP `zoneAware`, ThreatMetrix device
-  fingerprint) are not yet forwarded on the charge.
+- The ThreatMetrix device fingerprint (`deviceFingerPrint`/`sessionId`) sent by the WooCommerce
+  plugin is not yet forwarded on the charge (the client IP `zoneAware` is).
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list of fixes (~40 across 6 audit passes, ~6 fatal).
 

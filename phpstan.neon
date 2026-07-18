@@ -1,0 +1,14 @@
+includes:
+    # Legacy/vendored-code findings captured on first adoption; new code is held to level 4.
+    - phpstan-baseline.neon
+parameters:
+    level: 4
+    paths:
+        - Api
+        - Block
+        - Controller
+        - Helper
+        - Logger
+        - Model
+        - Setup
+    # Sdk/ is vendored, Swagger-generated code — intentionally excluded from analysis.

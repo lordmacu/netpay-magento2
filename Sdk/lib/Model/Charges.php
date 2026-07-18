@@ -69,6 +69,7 @@ class Charges implements ModelInterface, ArrayAccess
 'cvv' => 'string',
 'save_card' => 'bool',
 'deviceInformation' => '\Netpay\Client\Model\DeviceInformationCharges',
+        'zoneAware' => 'object',
 'instegrationsdk' => 'string',
 'integrationSdkVersion' => 'string',
 'referenceID' => 'string'    ];
@@ -92,6 +93,7 @@ class Charges implements ModelInterface, ArrayAccess
 'cvv' => null,
 'save_card' => null,
 'deviceInformation' => null,
+        'zoneAware' => null,
 'instegrationsdk' => null,
 'integrationSdkVersion' => null,
 'referenceID' => null];
@@ -136,6 +138,7 @@ class Charges implements ModelInterface, ArrayAccess
 'cvv' => 'cvv',
 'save_card' => 'saveCard',
 'deviceInformation' => 'deviceInformation',
+        'zoneAware' => 'zoneAware',
 'instegrationsdk' => 'instegrationsdk',
 'integrationSdkVersion' => 'integrationSdkVersion',
 'referenceID' => 'referenceID'   ];
@@ -159,6 +162,7 @@ class Charges implements ModelInterface, ArrayAccess
 'cvv' => 'setCvv',
 'save_card' => 'setSaveCard',
 'deviceInformation' => 'setDeviceInformation',
+        'zoneAware' => 'setZoneAware',
 'instegrationsdk' => 'setInstegrationsdk',
 'integrationSdkVersion' => 'setIntegrationSdkVersion',
 'referenceID' => 'setReferenceId'];
@@ -182,6 +186,7 @@ class Charges implements ModelInterface, ArrayAccess
 'cvv' => 'getCvv',
 'save_card' => 'getSaveCard',
 'deviceInformation' => 'getDeviceInformation',
+        'zoneAware' => 'getZoneAware',
 'instegrationsdk' => 'getInstegrationsdk',
 'integrationSdkVersion' => 'getIntegrationSdkVersion',
 'referenceID' => 'getReferenceId'];
@@ -257,6 +262,7 @@ class Charges implements ModelInterface, ArrayAccess
         $this->container['cvv'] = isset($data['cvv']) ? $data['cvv'] : null;
         $this->container['save_card'] = isset($data['save_card']) ? $data['save_card'] : null;
         $this->container['deviceInformation'] = isset($data['deviceInformation']) ? $data['deviceInformation'] : null;
+        $this->container['zoneAware'] = isset($data['zoneAware']) ? $data['zoneAware'] : null;
         $this->container['instegrationsdk'] = isset($data['instegrationsdk']) ? $data['instegrationsdk'] : null;
         $this->container['integrationSdkVersion'] = isset($data['integrationSdkVersion']) ? $data['integrationSdkVersion'] : null;
         $this->container['referenceID'] = isset($data['referenceID']) ? $data['referenceID'] : null;
@@ -772,4 +778,29 @@ class Charges implements ModelInterface, ArrayAccess
 
         return json_encode(ObjectSerializer::sanitizeForSerialization($this));
     }
+
+    /**
+     * Gets zoneAware
+     *
+     * @return object
+     */
+    public function getZoneAware()
+    {
+        return $this->container['zoneAware'];
+    }
+
+    /**
+     * Sets zoneAware
+     *
+     * @param object $zoneAware Anti-fraud signals (e.g. clientIPAdress)
+     *
+     * @return $this
+     */
+    public function setZoneAware($zoneAware)
+    {
+        $this->container['zoneAware'] = $zoneAware;
+
+        return $this;
+    }
+
 }

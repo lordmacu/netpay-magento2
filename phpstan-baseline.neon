@@ -1,0 +1,481 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^PHPDoc tag @param has invalid value \\(\\\\Netpay\\\\Payment\\\\Api\\\\Data\\\\CustomerLinkInterface Customer link interface\\.\\)\\: Unexpected token \"Customer\", expected variable at offset 101$#"
+			count: 1
+			path: Api/CustomerLinkRepositoryInterface.php
+
+		-
+			message: "#^PHPDoc tag @param has invalid value \\(\\\\Netpay\\\\Payment\\\\Api\\\\Data\\\\CustomerLinkInterface Customer link interface\\.\\)\\: Unexpected token \"Customer\", expected variable at offset 104$#"
+			count: 1
+			path: Api/CustomerLinkRepositoryInterface.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\Data\\\\Form\\\\Element\\\\AbstractElement\\:\\:unsScope\\(\\)\\.$#"
+			count: 1
+			path: Block/System/Config/Form/Field/Button.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\View\\\\Element\\\\BlockInterface\\:\\:setData\\(\\)\\.$#"
+			count: 1
+			path: Block/System/Config/Form/Field/Button.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\Data\\\\Form\\\\Element\\\\AbstractElement\\:\\:unsScope\\(\\)\\.$#"
+			count: 1
+			path: Block/System/Config/Form/Field/WebhookButton.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\View\\\\Element\\\\BlockInterface\\:\\:setData\\(\\)\\.$#"
+			count: 1
+			path: Block/System/Config/Form/Field/WebhookButton.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$hookUrl\\.$#"
+			count: 1
+			path: Controller/Adminhtml/System/Config/UpdateWebhook.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Vault\\\\Api\\\\Data\\\\PaymentTokenSearchResultsInterface\\:\\:getIsActive\\(\\)\\.$#"
+			count: 1
+			path: Controller/Cards/DeleteAction.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Vault\\\\Api\\\\Data\\\\PaymentTokenSearchResultsInterface\\:\\:getPaymentMethodCode\\(\\)\\.$#"
+			count: 1
+			path: Controller/Cards/DeleteAction.php
+
+		-
+			message: "#^Binary operation \"\\-\" between 32 and string results in an error\\.$#"
+			count: 1
+			path: Controller/Payment/ApiController.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\App\\\\RequestInterface\\:\\:getContent\\(\\)\\.$#"
+			count: 1
+			path: Controller/Payment/ApiController.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\App\\\\RequestInterface\\:\\:isPost\\(\\)\\.$#"
+			count: 1
+			path: Controller/Payment/ApiController.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\App\\\\ResponseInterface\\:\\:setHeader\\(\\)\\.$#"
+			count: 3
+			path: Controller/Payment/ApiController.php
+
+		-
+			message: "#^Offset 'result' on array\\{result\\: 'error'\\|'ignored'\\|'success', message\\: string\\} in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 1
+			path: Controller/Payment/ApiController.php
+
+		-
+			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\r\\\\n     \", expected type at offset 91$#"
+			count: 1
+			path: Controller/Payment/ApiController.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Checkout\\\\Model\\\\Session\\:\\:setAdditionalInfo\\(\\)\\.$#"
+			count: 3
+			path: Controller/Payment/Reside.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\DataObject\\:\\:registerCancellation\\(\\)\\.$#"
+			count: 3
+			path: Controller/Payment/Reside.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Store\\\\Api\\\\Data\\\\StoreInterface\\:\\:getUrl\\(\\)\\.$#"
+			count: 1
+			path: Controller/Payment/Reside.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$clientId\\.$#"
+			count: 1
+			path: Controller/Payment/Savecard.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$cvv2\\.$#"
+			count: 1
+			path: Controller/Payment/Savecard.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$preAuth\\.$#"
+			count: 1
+			path: Controller/Payment/Savecard.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$token\\.$#"
+			count: 1
+			path: Controller/Payment/Savecard.php
+
+		-
+			message: "#^Call to an undefined method Netpay\\\\Payment\\\\Api\\\\Data\\\\CustomerLinkInterface\\:\\:getData\\(\\)\\.$#"
+			count: 1
+			path: Controller/Payment/Savecard.php
+
+		-
+			message: "#^Call to an undefined method Netpay\\\\Payment\\\\Helper\\\\Data\\:\\:save\\(\\)\\.$#"
+			count: 1
+			path: Controller/Payment/Savecard.php
+
+		-
+			message: "#^Property Netpay\\\\Payment\\\\Controller\\\\Payment\\\\Savecard\\:\\:\\$paymentTokenRepository \\(Netpay\\\\Payment\\\\Helper\\\\Data\\) does not accept Magento\\\\Vault\\\\Api\\\\PaymentTokenRepositoryInterface\\.$#"
+			count: 1
+			path: Controller/Payment/Savecard.php
+
+		-
+			message: "#^PHPDoc tag @param has invalid value \\(int\\)\\: Unexpected token \"\\\\r\\\\n     \\* \", expected variable at offset 82$#"
+			count: 1
+			path: Helper/Config.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Sales\\\\Model\\\\Order\\\\Invoice\\:\\:setRequestedCaptureCase\\(\\)\\.$#"
+			count: 1
+			path: Helper/Data.php
+
+		-
+			message: "#^Class Netpay\\\\Payment\\\\Logger\\\\Logger extends @final class Monolog\\\\Logger\\.$#"
+			count: 1
+			path: Logger/Logger.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\DefaultHook\\:\\:_afterLoad\\(\\) with return type void returns \\$this\\(Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\DefaultHook\\) but should not return anything\\.$#"
+			count: 1
+			path: Model/Adminhtml/System/Config/DefaultHook.php
+
+		-
+			message: "#^Return type \\(void\\) of method Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\DefaultHook\\:\\:_afterLoad\\(\\) should be compatible with return type \\(\\$this\\(Magento\\\\Framework\\\\Model\\\\AbstractModel\\)\\) of method Magento\\\\Framework\\\\Model\\\\AbstractModel\\:\\:_afterLoad\\(\\)$#"
+			count: 1
+			path: Model/Adminhtml/System/Config/DefaultHook.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\EnableInputField\\:\\:_afterLoad\\(\\) with return type void returns \\$this\\(Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\EnableInputField\\) but should not return anything\\.$#"
+			count: 1
+			path: Model/Adminhtml/System/Config/EnableInputField.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\EnableInputField\\:\\:beforeSave\\(\\) with return type void returns \\$this\\(Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\EnableInputField\\) but should not return anything\\.$#"
+			count: 1
+			path: Model/Adminhtml/System/Config/EnableInputField.php
+
+		-
+			message: "#^Return type \\(void\\) of method Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\EnableInputField\\:\\:_afterLoad\\(\\) should be compatible with return type \\(\\$this\\(Magento\\\\Framework\\\\Model\\\\AbstractModel\\)\\) of method Magento\\\\Framework\\\\Model\\\\AbstractModel\\:\\:_afterLoad\\(\\)$#"
+			count: 1
+			path: Model/Adminhtml/System/Config/EnableInputField.php
+
+		-
+			message: "#^Return type \\(void\\) of method Netpay\\\\Payment\\\\Model\\\\Adminhtml\\\\System\\\\Config\\\\EnableInputField\\:\\:beforeSave\\(\\) should be compatible with return type \\(\\$this\\(Magento\\\\Framework\\\\Model\\\\AbstractModel\\)\\) of method Magento\\\\Framework\\\\Model\\\\AbstractModel\\:\\:beforeSave\\(\\)$#"
+			count: 1
+			path: Model/Adminhtml/System/Config/EnableInputField.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$clientid\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$cvv\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$cvv2\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$description\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$deviceInformation\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$email\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$firstname\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$identifier\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$instegrationsdk\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$integrationSdkVersion\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$lastname\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$merchantRedirectUrl\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$msicount\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$msiinterval\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$paymentmethod\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$phone\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$preAuth\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$referenceID\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$saveCard\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$source\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$status\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$token\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$type\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$url\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$zoneAware\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Checkout\\\\Model\\\\Session\\:\\:setAdditionalInfo\\(\\)\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\DataObject\\:\\:canCancel\\(\\)\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\DataObject\\:\\:getId\\(\\)\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\DataObject\\:\\:registerCancellation\\(\\)\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Sales\\\\Api\\\\Data\\\\OrderInterface\\:\\:addCommentToStatusHistory\\(\\)\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Sales\\\\Api\\\\Data\\\\OrderInterface\\:\\:registerCancellation\\(\\)\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Sales\\\\Api\\\\Data\\\\OrderInterface\\:\\:save\\(\\)\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Sales\\\\Api\\\\Data\\\\OrderInterface\\:\\:setToken\\(\\)\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Store\\\\Api\\\\Data\\\\StoreInterface\\:\\:getUrl\\(\\)\\.$#"
+			count: 5
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Vault\\\\Api\\\\Data\\\\PaymentTokenInterface\\:\\:getData\\(\\)\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Vault\\\\Api\\\\Data\\\\PaymentTokenInterface\\:\\:save\\(\\)\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Cannot use array destructuring on string\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^If condition is always false\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\ChargesApiManagement\\:\\:deleteToken\\(\\) should return string but return statement is missing\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\ChargesApiManagement\\:\\:getCharges\\(\\) should return string but empty return statement found\\.$#"
+			count: 3
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\ChargesApiManagement\\:\\:getCharges\\(\\) should return string but returns false\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\ChargesApiManagement\\:\\:getClientId\\(\\) should return string but returns array\\<int, false\\|null\\>\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\ChargesApiManagement\\:\\:getClientId\\(\\) should return string but returns array\\<int, mixed\\>\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\ChargesApiManagement\\:\\:getClientId\\(\\) should return string but returns array\\<int, string\\|false\\>\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Offset 'amex'\\|'discover'\\|'jcb'\\|'maestrointernational'\\|'mastercard'\\|'visa' on array\\{visa\\: 'VI', mastercard\\: 'MC', amex\\: 'AE', discover\\: 'DI', jcb\\: 'JCB', maestrointernational\\: 'MI'\\} in empty\\(\\) always exists and is not falsy\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$customerId$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\r\\\\n     \", expected type at offset 160$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\r\\\\n     \", expected type at offset 163$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Result of \\|\\| is always false\\.$#"
+			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between int and '' will always evaluate to false\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between int and 'null' will always evaluate to false\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Strict comparison using \\=\\=\\= between int and null will always evaluate to false\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Ternary operator condition is always false\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\CustomConfigProvider\\:\\:getConfig\\(\\) should return string but returns array\\<string, array\\<string, array\\<string, mixed\\>\\>\\>\\.$#"
+			count: 1
+			path: Model/CustomConfigProvider.php
+
+		-
+			message: "#^Return type \\(string\\) of method Netpay\\\\Payment\\\\Model\\\\CustomConfigProvider\\:\\:getConfig\\(\\) should be compatible with return type \\(array\\) of method Magento\\\\Checkout\\\\Model\\\\ConfigProviderInterface\\:\\:getConfig\\(\\)$#"
+			count: 1
+			path: Model/CustomConfigProvider.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\DataObject\\:\\:getId\\(\\)\\.$#"
+			count: 1
+			path: Model/CustomerLinkRepository.php
+
+		-
+			message: "#^Method Netpay\\\\Payment\\\\Model\\\\CustomerLinkRepository\\:\\:get\\(\\) should return Netpay\\\\Payment\\\\Api\\\\Data\\\\CustomerLinkInterface but returns Magento\\\\Framework\\\\DataObject\\.$#"
+			count: 1
+			path: Model/CustomerLinkRepository.php
+
+		-
+			message: "#^PHPDoc tag @param for parameter \\$collectionProcessor with type Magento\\\\Framework\\\\Api\\\\SearchCriteria\\\\CollectionProcessorInterface\\|null is not subtype of native type Magento\\\\Framework\\\\Api\\\\SearchCriteria\\\\CollectionProcessorInterface\\.$#"
+			count: 1
+			path: Model/CustomerLinkRepository.php
+
+		-
+			message: "#^Property Netpay\\\\Payment\\\\Model\\\\CustomerLinkRepository\\:\\:\\$filterBuilder is never read, only written\\.$#"
+			count: 1
+			path: Model/CustomerLinkRepository.php
+
+		-
+			message: "#^Property Netpay\\\\Payment\\\\Model\\\\CustomerLinkRepository\\:\\:\\$searchCriteriaBuilder is never read, only written\\.$#"
+			count: 1
+			path: Model/CustomerLinkRepository.php
+
+		-
+			message: "#^PHPDoc tag @param for parameter \\$payment with type Magento\\\\Framework\\\\DataObject\\|Magento\\\\Payment\\\\Model\\\\InfoInterface is not subtype of native type Magento\\\\Payment\\\\Model\\\\InfoInterface\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^PHPDoc tag @param for parameter \\$payment with type Magento\\\\Framework\\\\DataObject\\|Magento\\\\Payment\\\\Model\\\\InfoInterface is not subtype of native type Magento\\\\Payment\\\\Model\\\\InfoInterface\\.$#"
+			count: 3
+			path: Model/NetpayCash.php
