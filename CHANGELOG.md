@@ -4,6 +4,14 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.3
+
+Aligned two address/vault details with NetPay's WooCommerce plugin (the reference):
+- **Region:** the billing/shipping state is now sent as the state **code** (not the name), matching
+  what the WooCommerce plugin sends (`billing_state`). The code was already computed and discarded.
+- **preAuth:** no longer sent when saving a card — the WooCommerce plugin does not send it, so NetPay
+  applies its default. Removes a buggy always-false ternary and an inconsistent hard-coded `true`.
+
 ## 1.0.2
 
 - **Refunds:** admin online credit memos now refund through NetPay

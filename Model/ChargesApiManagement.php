@@ -443,9 +443,8 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
         $prueba = $customerLink->getNetpayId();
         $others = new DataObject();
         $others->token = $token;
-        $storeId = $this->configHelper->getStoreId();
-        $mode = $this->configHelper->getPaymentMode($storeId);
-        $others->preAuth = $mode ? false : true;
+        // preAuth is intentionally not sent — NetPay's own WooCommerce plugin does not send it
+        // when saving a card, so we let NetPay apply its default (no pre-authorization).
         $others->cvv2 = $cvv;
         $paymentManager = $this->dataHelper->getPaymentManager();
         $paymentManager->setShopdata(null, $others);

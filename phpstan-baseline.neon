@@ -101,11 +101,6 @@ parameters:
 			path: Controller/Payment/Savecard.php
 
 		-
-			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$preAuth\\.$#"
-			count: 1
-			path: Controller/Payment/Savecard.php
-
-		-
 			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$token\\.$#"
 			count: 1
 			path: Controller/Payment/Savecard.php
@@ -251,11 +246,6 @@ parameters:
 			path: Model/ChargesApiManagement.php
 
 		-
-			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$preAuth\\.$#"
-			count: 1
-			path: Model/ChargesApiManagement.php
-
-		-
 			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$referenceID\\.$#"
 			count: 2
 			path: Model/ChargesApiManagement.php
@@ -348,6 +338,11 @@ parameters:
 		-
 			message: "#^Call to an undefined method Magento\\\\Vault\\\\Api\\\\Data\\\\PaymentTokenInterface\\:\\:save\\(\\)\\.$#"
 			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Call to method setVaultPaymentToken\\(\\) on an unknown class Magento\\\\Sales\\\\Api\\\\Data\\\\OrderPaymentExtensionInterface\\.$#"
+			count: 1
 			path: Model/ChargesApiManagement.php
 
 		-

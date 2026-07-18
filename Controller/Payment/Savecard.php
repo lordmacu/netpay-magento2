@@ -93,8 +93,8 @@ class Savecard extends Action
                 try {
                     $others = new DataObject();
                     $others->clientId = $customerLink->getNetpayId();
-                    $others->token = $params['token']; 
-                    $others->preAuth = true;
+                    $others->token = $params['token'];
+                    // preAuth not sent — matches NetPay's WooCommerce plugin (default behavior).
                     $others->cvv2 = $params['cvv'];
                     $paymentManager = $this->dataHelper->getPaymentManager();
                     $paymentManager->setShopdata(null, $others);
