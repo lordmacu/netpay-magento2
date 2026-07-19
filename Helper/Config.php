@@ -30,6 +30,12 @@ class Config extends AbstractHelper
     
     /** @var string */
     const XML_PATH_CC_DESCRIPTION = 'payment/netpay/description';
+
+    const XML_PATH_ACCEPT_VISA = 'payment/netpay/accept_visa';
+
+    const XML_PATH_ACCEPT_MASTERCARD = 'payment/netpay/accept_mastercard';
+
+    const XML_PATH_ACCEPT_AMEX = 'payment/netpay/accept_amex';
     
     /** @var string */
     const XML_PATH_IS_CASH_ENABLE = 'payment/netpaycash/active';
@@ -120,6 +126,51 @@ class Config extends AbstractHelper
     {
         return $this->getScopeConfig()->getValue(
             self::XML_PATH_IS_CC_ENABLE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Whether the Visa brand icon is shown at checkout (cosmetic; matches the WooCommerce plugin).
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isVisaAccepted($storeId = null)
+    {
+        return (bool) $this->getScopeConfig()->getValue(
+            self::XML_PATH_ACCEPT_VISA,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Whether the Mastercard brand icon is shown at checkout (cosmetic).
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isMastercardAccepted($storeId = null)
+    {
+        return (bool) $this->getScopeConfig()->getValue(
+            self::XML_PATH_ACCEPT_MASTERCARD,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Whether the American Express brand icon is shown at checkout (cosmetic).
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isAmexAccepted($storeId = null)
+    {
+        return (bool) $this->getScopeConfig()->getValue(
+            self::XML_PATH_ACCEPT_AMEX,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );

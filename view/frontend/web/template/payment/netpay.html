@@ -15,6 +15,20 @@
         <div class="description-field">
             <span data-bind="html: getDescription()"></span>
         </div>
+        <!-- ko if: getAcceptedCards().length -->
+        <div class="netpay-accepted-cards" style="display: flex; gap: 8px; align-items: center; margin: 8px 0;">
+            <!-- ko foreach: getAcceptedCards() -->
+            <img data-bind="attr: {src: $data.icon, alt: $data.label, title: $data.label}"
+                 style="height: 24px; width: auto;">
+            <!-- /ko -->
+        </div>
+        <!-- /ko -->
+        <!-- ko if: getMode() -->
+        <div class="netpay-test-mode-notice"
+             style="margin: 8px 0; padding: 8px 12px; background: #fff7ed; border: 1px solid #ffb347; border-radius: 4px; font-size: 13px; line-height: 1.4;">
+            <span data-bind="i18n: 'MODO PRUEBAS ACTIVADO. Las transacciones no se envían al banco emisor. Usa la tarjeta 5200 0000 0000 0007, una fecha de expiración válida, cualquier CVV y el correo accept@netpay.com.mx para una transacción aprobada.'"></span>
+        </div>
+        <!-- /ko -->
         <div class="payment-method-billing-address">
             <!-- ko foreach: $parent.getRegion(getBillingAddressFormName()) -->
             <!-- ko template: getTemplate() --><!-- /ko -->

@@ -4,6 +4,16 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.8
+
+Two admin/checkout parity items vs NetPay's WooCommerce plugin (from the admin-surface review):
+- **Test-mode notice at checkout:** when the module is in test mode, the card form shows the sandbox
+  test-card hint (`5200 0000 0000 0007` / `accept@netpay.com.mx`), mirroring the WooCommerce plugin.
+- **Card-brand icon toggles:** new admin options *Show Visa / Mastercard / American Express icon*
+  (default on) in the credit-card config group; the checkout renders the accepted-brand icons
+  (reusing Magento's core card-brand images) gated by those toggles. Cosmetic only — it does not
+  affect which cards NetPay processes (matches the WooCommerce plugin's own note).
+
 ## 1.0.7
 
 Two cosmetic 3-D Secure parity fixes vs NetPay's WooCommerce plugin (from the strict review):

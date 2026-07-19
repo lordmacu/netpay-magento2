@@ -9,6 +9,7 @@ use Netpay\Payment\Model\Netpay;
 use Magento\Vault\Api\PaymentTokenManagementInterface;
 use Netpay\Payment\Logger\Logger;
 use Netpay\Payment\Model\CustomerLinkRepository;
+use Magento\Framework\View\Asset\Repository as AssetRepository;
 
 /**
  * Class customconfigprovider
@@ -40,7 +41,10 @@ class CustomConfigProvider implements ConfigProviderInterface
 
     protected $customerRepositoryFactory;
     protected $paymentTokenManagement;
-    
+
+    /** @var AssetRepository */
+    private $assetRepo;
+
     /**
      * customconfigprovider constructor
      *
@@ -53,7 +57,8 @@ class CustomConfigProvider implements ConfigProviderInterface
         Netpay $netpay,
         PaymentTokenManagementInterface $paymentTokenManagement,
         CustomerLinkRepository $customerLinkRepository,
-        Logger $logger
+        Logger $logger,
+        AssetRepository $assetRepo
     ) {
         $this->configHelper = $configHelper;
         $this->dataHelper = $dataHelper;
@@ -61,6 +66,33 @@ class CustomConfigProvider implements ConfigProviderInterface
         $this->customerLinkRepository = $customerLinkRepository;
         $this->paymentTokenManagement = $paymentTokenManagement;
         $this->logger = $logger;
+        $this->assetRepo = $assetRepo;
+    }
+
+    /**
+     * Accepted card brand icons to show at checkout, gated by the admin toggles (cosmetic; matches
+     * the WooCommerce plugin). Reuses Magento's core card-brand icons.
+     *
+     * @param int|null $storeId
+     * @return array
+     */
+    private function getAcceptedCards($storeId)
+    {
+        $brands = [
+            ['flag' => $this->configHelper->isVisaAccepted($storeId), 'label' => 'Visa', 'icon' => 'vi.png'],
+            ['flag' => $this->configHelper->isMastercardAccepted($storeId), 'label' => 'Mastercard', 'icon' => 'mc.png'],
+            ['flag' => $this->configHelper->isAmexAccepted($storeId), 'label' => 'American Express', 'icon' => 'ae.png'],
+        ];
+        $accepted = [];
+        foreach ($brands as $brand) {
+            if ($brand['flag']) {
+                $accepted[] = [
+                    'label' => $brand['label'],
+                    'icon' => $this->assetRepo->getUrl('Magento_Payment::images/cc/' . $brand['icon']),
+                ];
+            }
+        }
+        return $accepted;
     }
 
     /**
@@ -121,7 +153,8 @@ class CustomConfigProvider implements ConfigProviderInterface
                     'ccAvailable' => count($creditcards) > 0 ? 1 : 0,
                     'customer_id' => $customerId,
                     'msiValues' => $this->dataHelper->getMsiValues($this->dataHelper->getQuote()->getGrandTotal()),
-                    'configManager' => $this->dataHelper->getConfigManager()
+                    'configManager' => $this->dataHelper->getConfigManager(),
+                    'acceptedCards' => $this->getAcceptedCards($storeId)
                 ],
                 self::METHOD_CODE2 => [
                     'active' => ($mainConfig) ? $this->configHelper->isCashEnabled($storeId) : 0,

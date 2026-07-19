@@ -8,6 +8,9 @@
                 <payment_mode>test</payment_mode>
                 <title>Netpay Credit Card - The New Payment.</title>
                 <description>Secure payment with Netpay.</description>
+                <accept_visa>1</accept_visa>
+                <accept_mastercard>1</accept_mastercard>
+                <accept_amex>1</accept_amex>
             </netpay>
             <netpaycash>
                 <model>Netpay\Payment\Model\NetpayCash</model>

@@ -24,6 +24,10 @@ define(
             getDescription : function() {
                 return window.checkoutConfig.payment.netpay.description;
             },
+            // Accepted card brand icons to render at checkout (gated by the admin toggles).
+            getAcceptedCards: function() {
+                return window.checkoutConfig.payment.netpay.acceptedCards || [];
+            },
             getMsiValues: function() {
                 var msiValues = window.checkoutConfig.payment.netpay.msiValues;
                 return _.map(msiValues, function(value, key) {

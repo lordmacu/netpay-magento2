@@ -52,6 +52,22 @@
                         <label>Description</label>
                         <config_path>payment/netpay/description</config_path>
                     </field>
+                    <field id="accept_visa" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Show Visa icon</label>
+                        <config_path>payment/netpay/accept_visa</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                        <comment>Only controls the card brand icons shown at checkout; it does not affect which cards NetPay processes.</comment>
+                    </field>
+                    <field id="accept_mastercard" translate="label" type="select" sortOrder="11" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Show Mastercard icon</label>
+                        <config_path>payment/netpay/accept_mastercard</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    </field>
+                    <field id="accept_amex" translate="label" type="select" sortOrder="12" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Show American Express icon</label>
+                        <config_path>payment/netpay/accept_amex</config_path>
+                        <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    </field>
                 </group>
                 <group id="credentials_cash" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>OxxoPay</label>
