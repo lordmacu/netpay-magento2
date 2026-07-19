@@ -4,6 +4,16 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.4
+
+- **Anti-fraud:** the checkout now forwards the ThreatMetrix device fingerprint on the card charge,
+  matching NetPay's WooCommerce plugin. On load it generates a session id and fires the online-metrix
+  tags (a `<script>` plus a hidden iframe, `org_id` `45ssiuz3` test / `9ozphlqx` prod), then sends
+  that id as both `deviceFingerPrint` and `sessionId`. Wired through all SDK layers (getCharges +
+  mapping ×2 + the `Charges` model so the fields are not dropped on serialization), the same way the
+  client IP (`zoneAware`, 1.0.1) was. Also fixes pre-existing broken fingerprint code in the
+  save-card flow (it read a non-existent `#iframeTM` element via a bogus regex).
+
 ## 1.0.3
 
 Aligned two address/vault details with NetPay's WooCommerce plugin (the reference):
@@ -86,5 +96,3 @@ Aligned two address/vault details with NetPay's WooCommerce plugin (the referenc
   Gateway is planned.
 - Refunds are **full only** (NetPay's refund endpoint takes no amount); partial refunds are not
   supported. Capture is online at charge time.
-- The ThreatMetrix device fingerprint (`deviceFingerPrint`/`sessionId`) sent by the WooCommerce
-  plugin is not yet forwarded on the charge (client IP `zoneAware` is — see 1.0.1).

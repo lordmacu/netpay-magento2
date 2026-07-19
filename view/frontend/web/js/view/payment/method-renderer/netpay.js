@@ -8,8 +8,9 @@ define(
         'Magento_Checkout/js/model/error-processor',
         'Magento_Checkout/js/model/full-screen-loader',
         'Magento_Customer/js/model/customer',
+        'Netpay_Payment/js/device-fingerprint',
     ],
-    function (Component, additionalValidators, urlBuilder, storage, $, errorProcessor, fullScreenLoader, customer) {
+    function (Component, additionalValidators, urlBuilder, storage, $, errorProcessor, fullScreenLoader, customer, doProfile) {
         'use strict';
         return Component.extend({
             defaults: {
@@ -77,6 +78,10 @@ define(
             getMode: function () {
                 return window.checkoutConfig.payment.netpay.mode === 'test' ? true : false;
             },
+            // ThreatMetrix org id used for device fingerprinting (matches NetPay's WooCommerce plugin).
+            getOrgId: function () {
+                return window.checkoutConfig.payment.netpay.mode === 'live' ? '9ozphlqx' : '45ssiuz3';
+            },
             // Retry-safe: drop sticky Cardinal/Songbird 3DS state so a new attempt does not inherit
             // stale challenge data from a previous failed try (matches the WooCommerce plugin).
             clearThreeDsStorage: function () {
@@ -100,6 +105,11 @@ define(
             },
             initObservable: function() {
                 var self = this._super();
+                // Fire the ThreatMetrix device fingerprint once (matches the WooCommerce plugin).
+                // The generated session id is sent on the charge as deviceFingerPrint/sessionId.
+                if (!window.netpayDeviceFingerprint) {
+                    window.netpayDeviceFingerprint = doProfile(self.getOrgId());
+                }
                 if(!self.netpayJsLoaded) {
                     $.getScript('https://cdn.netpay.mx/js/latest/netpay3ds-noConflict.js', function() {
                         let _this = this;
@@ -257,16 +267,8 @@ define(
                         });
 
                         function saveSecondCard() {
-                            const iframes = document.getElementById('iframeTM');
-                            const patron = /retail(\d+)/;
-                            const coincidencias = iframes.src.split(patron);
-                            var dfp = ''
-                            if (coincidencias && coincidencias[1]) {
-                                const numerosDespuesDeRetail = coincidencias[1];
-                                dfp = numerosDespuesDeRetail;
-                            } else {
-                                console.log("No se encontraron números después de 'retail'.");
-                            }
+                            // Device fingerprint generated once in initObservable (ThreatMetrix session id).
+                            var dfp = window.netpayDeviceFingerprint || '';
                             var cardNumber = $("#cardNumber").val();
                             var cardNumberFormat = cardNumber.replace(/-/g, "");
                             var expirationDate = $("#expirationDate").val();
@@ -392,7 +394,8 @@ define(
                                             token: response.token,
                                             deviceInformation: deviceInfo,
                                             paymentmethod: 'card',
-                                            msicount: $('#netpay_payment_msi_id').val(), 
+                                            deviceFingerPrint: window.netpayDeviceFingerprint,
+                                            msicount: $('#netpay_payment_msi_id').val(),
                                             saveCc: saveCc,
                                             cardselected: false,
                                         };
@@ -403,6 +406,7 @@ define(
                                             token: response.token,
                                             deviceInformation: deviceInfo,
                                             paymentmethod: 'card',
+                                            deviceFingerPrint: window.netpayDeviceFingerprint,
                                             saveCc: saveCc,
                                             cardselected: false,
                                         };
@@ -569,7 +573,8 @@ define(
                                 paymentmethod: 'card',
                                 token: token,
                                 deviceInformation: deviceInfo,
-                                msicount: $('#netpay_payment_msi_id').val(), 
+                                deviceFingerPrint: window.netpayDeviceFingerprint,
+                                msicount: $('#netpay_payment_msi_id').val(),
                                 saveCc: false,
                                 cvv: cvv,
                                 cardSelected: true
@@ -581,10 +586,11 @@ define(
                                 paymentmethod: 'card',
                                 token: token,
                                 deviceInformation: deviceInfo,
-                                msicount: null, 
+                                deviceFingerPrint: window.netpayDeviceFingerprint,
+                                msicount: null,
                                 saveCc: false,
                                 cvv: cvv,
-                                cardSelected: true 
+                                cardSelected: true
                             };
                         }
                         fullScreenLoader.startLoader();

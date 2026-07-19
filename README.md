@@ -157,8 +157,6 @@ vendor/bin/phpcs --standard=Magento2 --severity=10 --ignore="*/Sdk/*" app/code/N
   out-of-band). Migration to the Payment Provider Gateway is planned.
 - Refunds are **full only** (NetPay's refund endpoint takes no amount); partial refunds are not
   supported. Capture is online at charge time.
-- The ThreatMetrix device fingerprint (`deviceFingerPrint`/`sessionId`) sent by the WooCommerce
-  plugin is not yet forwarded on the charge (the client IP `zoneAware` is).
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list of fixes (~40 across 6 audit passes, ~6 fatal).
 

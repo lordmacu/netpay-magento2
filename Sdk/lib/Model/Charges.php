@@ -70,6 +70,8 @@ class Charges implements ModelInterface, ArrayAccess
 'save_card' => 'bool',
 'deviceInformation' => '\Netpay\Client\Model\DeviceInformationCharges',
         'zoneAware' => 'object',
+        'deviceFingerPrint' => 'string',
+        'sessionId' => 'string',
 'instegrationsdk' => 'string',
 'integrationSdkVersion' => 'string',
 'referenceID' => 'string'    ];
@@ -94,6 +96,8 @@ class Charges implements ModelInterface, ArrayAccess
 'save_card' => null,
 'deviceInformation' => null,
         'zoneAware' => null,
+        'deviceFingerPrint' => null,
+        'sessionId' => null,
 'instegrationsdk' => null,
 'integrationSdkVersion' => null,
 'referenceID' => null];
@@ -139,6 +143,8 @@ class Charges implements ModelInterface, ArrayAccess
 'save_card' => 'saveCard',
 'deviceInformation' => 'deviceInformation',
         'zoneAware' => 'zoneAware',
+        'deviceFingerPrint' => 'deviceFingerPrint',
+        'sessionId' => 'sessionId',
 'instegrationsdk' => 'instegrationsdk',
 'integrationSdkVersion' => 'integrationSdkVersion',
 'referenceID' => 'referenceID'   ];
@@ -163,6 +169,8 @@ class Charges implements ModelInterface, ArrayAccess
 'save_card' => 'setSaveCard',
 'deviceInformation' => 'setDeviceInformation',
         'zoneAware' => 'setZoneAware',
+        'deviceFingerPrint' => 'setDeviceFingerPrint',
+        'sessionId' => 'setSessionId',
 'instegrationsdk' => 'setInstegrationsdk',
 'integrationSdkVersion' => 'setIntegrationSdkVersion',
 'referenceID' => 'setReferenceId'];
@@ -187,6 +195,8 @@ class Charges implements ModelInterface, ArrayAccess
 'save_card' => 'getSaveCard',
 'deviceInformation' => 'getDeviceInformation',
         'zoneAware' => 'getZoneAware',
+        'deviceFingerPrint' => 'getDeviceFingerPrint',
+        'sessionId' => 'getSessionId',
 'instegrationsdk' => 'getInstegrationsdk',
 'integrationSdkVersion' => 'getIntegrationSdkVersion',
 'referenceID' => 'getReferenceId'];
@@ -263,6 +273,8 @@ class Charges implements ModelInterface, ArrayAccess
         $this->container['save_card'] = isset($data['save_card']) ? $data['save_card'] : null;
         $this->container['deviceInformation'] = isset($data['deviceInformation']) ? $data['deviceInformation'] : null;
         $this->container['zoneAware'] = isset($data['zoneAware']) ? $data['zoneAware'] : null;
+        $this->container['deviceFingerPrint'] = isset($data['deviceFingerPrint']) ? $data['deviceFingerPrint'] : null;
+        $this->container['sessionId'] = isset($data['sessionId']) ? $data['sessionId'] : null;
         $this->container['instegrationsdk'] = isset($data['instegrationsdk']) ? $data['instegrationsdk'] : null;
         $this->container['integrationSdkVersion'] = isset($data['integrationSdkVersion']) ? $data['integrationSdkVersion'] : null;
         $this->container['referenceID'] = isset($data['referenceID']) ? $data['referenceID'] : null;
@@ -799,6 +811,54 @@ class Charges implements ModelInterface, ArrayAccess
     public function setZoneAware($zoneAware)
     {
         $this->container['zoneAware'] = $zoneAware;
+
+        return $this;
+    }
+
+    /**
+     * Gets deviceFingerPrint
+     *
+     * @return string
+     */
+    public function getDeviceFingerPrint()
+    {
+        return $this->container['deviceFingerPrint'];
+    }
+
+    /**
+     * Sets deviceFingerPrint
+     *
+     * @param string $deviceFingerPrint Anti-fraud device fingerprint (ThreatMetrix session id)
+     *
+     * @return $this
+     */
+    public function setDeviceFingerPrint($deviceFingerPrint)
+    {
+        $this->container['deviceFingerPrint'] = $deviceFingerPrint;
+
+        return $this;
+    }
+
+    /**
+     * Gets sessionId
+     *
+     * @return string
+     */
+    public function getSessionId()
+    {
+        return $this->container['sessionId'];
+    }
+
+    /**
+     * Sets sessionId
+     *
+     * @param string $sessionId Anti-fraud device fingerprint session id
+     *
+     * @return $this
+     */
+    public function setSessionId($sessionId)
+    {
+        $this->container['sessionId'] = $sessionId;
 
         return $this;
     }

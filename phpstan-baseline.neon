@@ -186,6 +186,11 @@ parameters:
 			path: Model/ChargesApiManagement.php
 
 		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$deviceFingerPrint\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
 			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$deviceInformation\\.$#"
 			count: 1
 			path: Model/ChargesApiManagement.php
@@ -253,6 +258,11 @@ parameters:
 		-
 			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$saveCard\\.$#"
 			count: 2
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$sessionId\\.$#"
+			count: 1
 			path: Model/ChargesApiManagement.php
 
 		-

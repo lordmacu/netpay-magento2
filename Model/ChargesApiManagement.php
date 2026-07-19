@@ -188,7 +188,7 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
      * 
      * @return string
      */
-    public function getCharges($referenceID, $orderId, $paymentmethod, $token, $deviceInformation,  $msicount = null, $saveCc = false, $cvv = '', $cardSelected = false)
+    public function getCharges($referenceID, $orderId, $paymentmethod, $token, $deviceInformation,  $msicount = null, $saveCc = false, $cvv = '', $cardSelected = false, $deviceFingerPrint = '')
     {
         if ($paymentmethod == 'savecc') {
             $order = (int) $this->checkoutSession->getData('last_order_id');
@@ -231,6 +231,13 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
             // a signal the Decision Manager uses).
             $clientIp = $this->remoteAddress->getRemoteAddress() ?: '0.0.0.0';
             $others->zoneAware = (object) ['clientIPAdress' => (string) $clientIp];
+
+            // Anti-fraud: device fingerprint (ThreatMetrix session id captured on the front).
+            // Sent as both deviceFingerPrint and sessionId, matching NetPay's WooCommerce plugin.
+            if (!empty($deviceFingerPrint)) {
+                $others->deviceFingerPrint = (string) $deviceFingerPrint;
+                $others->sessionId = (string) $deviceFingerPrint;
+            }
 
             if ($cardSelected) {
                 $saveCc = false;
