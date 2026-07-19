@@ -24,17 +24,19 @@
                         <label>Public Key For Test</label>
                         <config_path>payment/netpay/public_key_test</config_path>
                     </field>
-                    <field id="secret_key_test" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <field id="secret_key_test" translate="label" sortOrder="1" type="obscure" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Secret Key For Test</label>
                         <config_path>payment/netpay/secret_key_test</config_path>
+                        <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                     </field>
                     <field id="public_key_live" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Public Key For Live</label>
                         <config_path>payment/netpay/public_key_live</config_path>
                     </field>
-                    <field id="secret_key_live" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <field id="secret_key_live" translate="label" sortOrder="1" type="obscure" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Secret Key For Live</label>
                         <config_path>payment/netpay/secret_key_live</config_path>
+                        <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
                     </field>
                 </group>
                 <group id="credentials_creditcard" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">

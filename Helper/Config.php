@@ -7,6 +7,7 @@ use Magento\Framework\App\Helper\Context;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Framework\Encryption\EncryptorInterface;
 
 /**
  * Class Config
@@ -63,20 +64,38 @@ class Config extends AbstractHelper
 
     /** @var StoreManagerInterface */
     protected $storeManager;
-    
+
+    /** @var EncryptorInterface */
+    private $encryptor;
+
     /**
      * config constructor
      *
      * @param Context               $context
      * @param StoreManagerInterface $storeManager
+     * @param EncryptorInterface    $encryptor
      */
     public function __construct(
         Context $context,
-        StoreManagerInterface $storeManager
+        StoreManagerInterface $storeManager,
+        EncryptorInterface $encryptor
     ) {
         parent::__construct($context);
         $this->storeManager = $storeManager;
         $this->scopeConfig = $context->getScopeConfig();
+        $this->encryptor = $encryptor;
+    }
+
+    /**
+     * Decrypt a secret key stored via the Encrypted backend model. Returns '' when empty; on a legacy
+     * plaintext value the decrypt yields '' — re-save the key in the admin to store it encrypted.
+     *
+     * @param string|null $value
+     * @return string
+     */
+    private function decryptSecret($value)
+    {
+        return empty($value) ? '' : (string) $this->encryptor->decrypt($value);
     }
     
     /**
@@ -291,11 +310,11 @@ class Config extends AbstractHelper
      */
     public function getSecretKeyTest($storeId = null)
     {
-        return $this->getScopeConfig()->getValue(
+        return $this->decryptSecret($this->getScopeConfig()->getValue(
             self::XML_PATH_SECRET_KEY_TEST,
             ScopeInterface::SCOPE_STORE,
             $storeId
-        );
+        ));
     }
 
     /**
@@ -319,11 +338,11 @@ class Config extends AbstractHelper
      */
     public function getSecretKeyLive($storeId = null)
     {
-        return $this->getScopeConfig()->getValue(
+        return $this->decryptSecret($this->getScopeConfig()->getValue(
             self::XML_PATH_SECRET_KEY_LIVE,
             ScopeInterface::SCOPE_STORE,
             $storeId
-        );
+        ));
     }
     
     /**

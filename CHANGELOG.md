@@ -4,6 +4,16 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.11
+
+- **Encrypted secret keys in admin:** the secret keys (test/live) in *Stores → Configuration →
+  Payment Methods → Netpay* are now `obscure` fields backed by Magento's `Encrypted` config model, so
+  they are **stored encrypted** and rendered as `******` (public keys stay plain — they are not
+  secret). The config helper decrypts them on read.
+  - Migration: any existing plaintext secret key must be **re-saved once** (admin form) to be stored
+    encrypted. Note that `bin/magento config:set` does **not** encrypt an obscure field — set the
+    secret key from the admin (the public key can still be set via `config:set`).
+
 ## 1.0.10
 
 - **Install defaults:** the card method now ships **active in test mode** with a clean default title
