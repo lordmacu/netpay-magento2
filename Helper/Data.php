@@ -11,6 +11,7 @@ use Magento\Sales\Model\Service\InvoiceService;
 use Magento\Sales\Model\Order\Invoice;
 use Magento\Framework\DB\TransactionFactory;
 use Netpay\Payment\Logger\Logger;
+use Magento\Catalog\Api\ProductRepositoryInterface;
 
 /**
  * Class Data
@@ -43,13 +44,17 @@ class Data extends AbstractHelper
      * @param TransactionFactory $transactionFactory
      * @param Logger $logger
      */ 
+    /** @var ProductRepositoryInterface */
+    protected $productRepository;
+
     public function __construct(
         ConfigHelper $configHelper,
         Context $context,
         CheckoutSession $checkoutSession,
         InvoiceService $invoiceService,
         TransactionFactory $transactionFactory,
-        Logger $logger
+        Logger $logger,
+        ProductRepositoryInterface $productRepository
     ) {
         parent::__construct($context);
         $this->configHelper = $configHelper;
@@ -57,6 +62,31 @@ class Data extends AbstractHelper
         $this->invoiceService = $invoiceService;
         $this->transactionFactory = $transactionFactory;
         $this->logger = $logger;
+        $this->productRepository = $productRepository;
+    }
+
+    /**
+     * Whether the current cart is eligible for Meses sin Intereses. It is NOT when any item's product
+     * has netpay_msi = No, matching the WooCommerce plugin (which collapses MSI to a single payment
+     * if any cart product is outside the eligible list).
+     *
+     * @return bool
+     */
+    public function cartAllowsMsi()
+    {
+        try {
+            $storeId = (int) $this->getQuote()->getStoreId();
+            foreach ($this->getQuote()->getAllVisibleItems() as $item) {
+                /** @var \Magento\Catalog\Model\Product $product */
+                $product = $this->productRepository->getById($item->getProductId(), false, $storeId);
+                if ((string) $product->getData('netpay_msi') === '0') {
+                    return false;
+                }
+            }
+        } catch (\Exception $e) {
+            $this->logger->debug('NetPay MSI eligibility check failed: ' . $e->getMessage());
+        }
+        return true;
     }
 
     public function getQuote()
@@ -103,6 +133,11 @@ class Data extends AbstractHelper
     
     public function getMsiValues($total)
     {
+        // Per-product MSI gating (matches WooCommerce's promotion_products): if any cart item is not
+        // MSI-eligible, offer a single payment only.
+        if (!$this->cartAllowsMsi()) {
+            return [1 => 1];
+        }
         $promotions = array();
         try {
             $paymentManager = $this->getPaymentManager();
@@ -226,6 +261,10 @@ class Data extends AbstractHelper
             'Formato de numero invalido' => 'Transacción rechazada. Formato de numero invalido.',
             'PIN Invalido/Excedido' => 'Transacción rechazada. PIN Invalido/Excedido.',
             'Tarjeta Sin Activar' => 'Transacción rechazada. Tarjeta Sin Activar.',
+            'Transaccion No Permitida' => 'Tarjeta no permitida, intente con otra tarjeta.',
+            'Tarjeta invalida' => 'Tarjeta invalida, intente con otra tarjeta.',
+            'PARes signature digest value mismatch. PARes message has been modified.' =>
+                'Transacción rechazada. Favor de comunicarte con tu banco.',
         ];
         $key = (string) $response;
         $message = isset($map[$key])

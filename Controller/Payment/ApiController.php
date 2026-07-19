@@ -144,6 +144,10 @@ class ApiController extends Action implements CsrfAwareActionInterface, HttpPost
                             if ($order->canInvoice()) {
                                 $this->dataHelper->generateInvoice($order);
                             }
+                            // Leave an audit-trail note on the order (matches the WooCommerce plugin).
+                            $order->addCommentToStatusHistory(
+                                'NetPay webhook: transaction ' . $status . ' — order settled.'
+                            )->save();
                             $return = ['result' => 'success', 'message' => 'Order settled'];
                             $result->setHttpResponseCode(200);
                         } elseif (in_array($status, ['FAILED', 'REJECT', 'REJECTED'], true)) {

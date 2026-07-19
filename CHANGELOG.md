@@ -4,6 +4,23 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.12
+
+Minor WooCommerce-parity items:
+- **MSI per product:** a new `netpay_msi` product attribute (default *Yes*) lets a merchant exclude
+  specific products from Meses sin Intereses. When any cart item is not eligible, only a single
+  payment is offered — matching the WooCommerce plugin's `promotion_products`. Store-scoped.
+- **Webhook audit trail:** the webhook settle branch now records an order status-history note.
+- **Friendly messages:** added the 3 gateway responses that fell through to the generic message
+  (`Transaccion No Permitida`, lowercase `Tarjeta invalida`, and the PARes signature-mismatch string).
+
+### Known limitations (need NetPay's v3 API / account)
+- **Partial refund** and **manual capture (authorize-only)** exist in the WooCommerce plugin via
+  NetPay's *legacy* API, but the vendored **v3.5 SDK does not expose them** (the refund endpoint
+  takes no amount; there is no capture endpoint). They are intentionally **not** implemented on a
+  guess — a blind partial refund would risk over-refunding — and are pending NetPay confirmation
+  that the v3 API supports an amount on `/refund` and an authorize/capture flow.
+
 ## 1.0.11
 
 - **Encrypted secret keys in admin:** the secret keys (test/live) in *Stores → Configuration →
