@@ -423,6 +423,16 @@ define(
                                                 fullScreenLoader.startLoader();
                                                 var url = responseBody.url;
                                                 window.location.href = url;
+                                            } else if (responseBody.status == 'failed') {
+                                                // Terminal decline (e.g. Decision Manager / gateway rejection). Surface the
+                                                // reason and let the shopper retry, instead of entering the 3DS confirm path.
+                                                fullScreenLoader.stopLoader();
+                                                self.isPlaceOrderActionAllowed(true);
+                                                var declineError = document.getElementById('ErrorConfirm3DS');
+                                                if (declineError) {
+                                                    declineError.textContent = responseBody.responseMsg || 'El pago fue rechazado. Intenta con otra tarjeta.';
+                                                    declineError.style.display = 'block';
+                                                }
                                             } else {
                                                 var objeto = response;
                                                 var objeto2 = JSON.parse(objeto);
@@ -437,12 +447,20 @@ define(
                                                 }
 
                                                 function callbackProceed(_this, processorTransactionId, status) {
-                                                    fullScreenLoader.startLoader();
                                                     if (status == 'success') {
+                                                        fullScreenLoader.startLoader();
                                                         confirm(responseBody.transactionTokenId, processorTransactionId);
                                                     } else {
-                                                        console.log('error');
-                                                        errorProcessor.process(response)
+                                                        // Challenge failed or was abandoned by the shopper. Stop the loader and
+                                                        // surface an error (the raw charge response is not an error object), and
+                                                        // let the shopper retry instead of leaving the spinner running forever.
+                                                        fullScreenLoader.stopLoader();
+                                                        self.isPlaceOrderActionAllowed(true);
+                                                        var challengeError = document.getElementById('ErrorConfirm3DS');
+                                                        if (challengeError) {
+                                                            challengeError.textContent = 'No se pudo completar la autenticación 3D Secure. Intenta de nuevo.';
+                                                            challengeError.style.display = 'block';
+                                                        }
                                                     }
                                                 }
 
@@ -605,6 +623,16 @@ define(
                                     var url = responseBody.url;
                                     console.log('success');
                                     window.location.href = url;
+                                } else if (responseBody.status === 'failed') {
+                                    // Terminal decline (e.g. Decision Manager / gateway rejection). Surface the
+                                    // reason and let the shopper retry, instead of entering the 3DS confirm path.
+                                    fullScreenLoader.stopLoader();
+                                    self.isPlaceOrderActionAllowed(true);
+                                    var declineErr = document.getElementById('ErrorConfirm3DS');
+                                    if (declineErr) {
+                                        declineErr.textContent = responseBody.responseMsg || 'El pago fue rechazado. Intenta con otra tarjeta.';
+                                        declineErr.style.display = 'block';
+                                    }
                                 }else{
                                     var objeto = response;
                                     var objeto2 = JSON.parse(objeto);
@@ -619,12 +647,20 @@ define(
                                     }
 
                                     function callbackProceed(_this, processorTransactionId, status) {
-                                        fullScreenLoader.startLoader();
                                         if (status == 'success') {
-                                            confirm(responseBody.transactionTokenId, processorTransactionId);                                                      
+                                            fullScreenLoader.startLoader();
+                                            confirm(responseBody.transactionTokenId, processorTransactionId);
                                         } else {
-                                            console.log('error');
-                                            errorProcessor.process(response)
+                                            // Challenge failed or was abandoned by the shopper. Stop the loader and
+                                            // surface an error (the raw charge response is not an error object), and
+                                            // let the shopper retry instead of leaving the spinner running forever.
+                                            fullScreenLoader.stopLoader();
+                                            self.isPlaceOrderActionAllowed(true);
+                                            var challengeErr = document.getElementById('ErrorConfirm3DS');
+                                            if (challengeErr) {
+                                                challengeErr.textContent = 'No se pudo completar la autenticación 3D Secure. Intenta de nuevo.';
+                                                challengeErr.style.display = 'block';
+                                            }
                                         }
                                     }
 

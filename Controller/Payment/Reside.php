@@ -156,6 +156,9 @@ class Reside extends Action
                 $paymentManager->setUrlAttributes([$transactionId , $processor_transaction_id]);
                 $responseConfirm = $paymentManager->confirm();
                 if ($responseConfirm->status == 'success') {
+                    // Generate the invoice here too (the DONE branch below does the same); otherwise a
+                    // WAIT_THREEDS -> confirm -> success order reached the success page uninvoiced.
+                    $this->dataHelper->generateInvoice($order);
                     $this->checkoutSession->setAdditionalInfo($response);
                     return $resultRedirect->setPath(
                             'checkout/onepage/success',
@@ -171,7 +174,21 @@ class Reside extends Action
                     return $this->_redirect($cartUrl);
                 }
             } catch (\Exception $e) {
+                // The confirm may already have been applied by the frontend confirm3DS step (a repeat
+                // confirm can 409). Re-read the gateway state before giving up: if the order is already
+                // paid, settle it instead of cancelling a valid order.
                 $this->logger->debug($e->getMessage());
+                try {
+                    $paymentManager->setUrlAttributes([$transactionId]);
+                    $recheck = $paymentManager->getOrder();
+                    if (in_array($recheck->status, ['DONE', 'CHARGEABLE'], true)) {
+                        $this->dataHelper->generateInvoice($order);
+                        $this->checkoutSession->setAdditionalInfo($recheck);
+                        return $resultRedirect->setPath('checkout/onepage/success', ['_current' => true]);
+                    }
+                } catch (\Exception $ignored) {
+                    $this->logger->debug('NetPay 3DS re-check failed: ' . $ignored->getMessage());
+                }
                 $this->messageManager->addError(
                     __('SORRY! There is a problem. Please contact us.')
                 );
@@ -198,9 +215,10 @@ class Reside extends Action
 
         } 
 
-        if ($response->status == 'DONE') {
+        if (in_array($response->status, ['DONE', 'CHARGEABLE'], true)) {
 
-            //generate an invoice of order
+            // Generate an invoice of the order. CHARGEABLE is a valid approved state too — without it
+            // a frictionless CHARGEABLE order fell into the else branch below and was wrongly cancelled.
             $this->dataHelper->generateInvoice($order);
         } else {
             $this->messageManager->addError(

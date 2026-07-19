@@ -4,6 +4,31 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.6
+
+Strict 3-D Secure review against NetPay's WooCommerce plugin. The happy path (DDC/referenceId,
+challenge-vs-frictionless detection, confirm contract) was already at parity; these fixes harden the
+**unhappy paths**, which were the only real gaps:
+
+- **Terminal declines:** the card charge now surfaces a friendly failure and cancels the orphaned
+  order when the gateway declines (`failed`/`rejected`/`insecure`), instead of returning an
+  unparseable `false` that left the order stuck in `pending` with no message.
+- **Frictionless review:** a `review` charge is passed through to the frontend on status alone; it no
+  longer requires a `returnUrl` (which a frictionless review may not carry) — that gate silently
+  broke the frictionless-3DS confirm the JS was built to handle.
+- **Failed confirm:** a challenge confirm that throws (e.g. HTTP 409) now cancels the still-pending
+  order, matching the frictionless branch.
+- **Redirect-return (`Reside`):** treats `CHARGEABLE` as a valid paid state (it was falling through
+  to *cancel*); generates the invoice on the `WAIT_THREEDS → confirm → success` path (previously only
+  `DONE` did); and, on a confirm exception, re-reads the gateway state and settles if the order is
+  already paid instead of cancelling a valid order (repeat-confirm 409 safety).
+- **Frontend:** fixes `callbackProceed` on a failed/abandoned 3DS challenge (it left the loader
+  spinning forever and passed the raw response to `errorProcessor`) and handles a terminal-decline
+  (`status=failed`) charge response, in both the main and place-order charge flows.
+
+> Note: these unhappy-path fixes can't be verified end-to-end while NetPay's sandbox Decision Manager
+> declines every transaction; `php -l`, phpstan and phpcs are clean.
+
 ## 1.0.5
 
 - **Anti-fraud:** the card charge now sends the shopper's real browser **User-Agent**, matching

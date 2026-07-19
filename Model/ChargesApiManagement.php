@@ -348,9 +348,26 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
                 $varAccept->status = $status;
                 $varAccept->url = $url;
                 return json_encode($varAccept);
-            } elseif ($charges->status == "review" && !empty($charges->returnUrl)) {
+            } elseif ($charges->status == "review") {
+                // 3DS: the frontend distinguishes a real challenge (acsUrl+paReq+authenticationTransactionID)
+                // from a frictionless review and drives the confirm accordingly. Pass the charge through on
+                // status alone (matching NetPay's WooCommerce plugin); do NOT gate on returnUrl, which a
+                // frictionless review may not carry (that gate made the flow silently fall through to false).
                 return json_encode($charges);
             }
+            // Terminal decline (failed / rejected / insecure, or any other non-success/review status).
+            // Don't leave the order orphaned as pending: cancel it and return a friendly failure the
+            // frontend can surface, matching the WooCommerce plugin (which fails the order).
+            $rawMessage = $charges->responseMsg ?? ($charges->status ?? 'declined');
+            if ($order->canCancel()) {
+                $order->registerCancellation('NetPay charge declined: ' . (string) $rawMessage)->save();
+            }
+            $this->checkoutSession->restoreQuote();
+            return json_encode([
+                'status' => 'failed',
+                'transactionTokenId' => $charges->transactionTokenId ?? null,
+                'responseMsg' => (string) $this->dataHelper->friendlyResponse((string) $rawMessage),
+            ]);
         } else {
             if ($charges->status == "success") {
                 $this->checkoutSession->setAdditionalInfo($charges);
@@ -364,7 +381,6 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
                 return $this->storeManager->getStore()->getUrl('checkout/cart', array('_secure' => true));
             }
         }
-        return false;
     }
 
     protected function generatePublicHash(PaymentTokenInterface $paymentToken)
@@ -578,8 +594,11 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
             $responseConfirm = $paymentManager->confirm();
         } catch (\Exception $e) {
             // A confirm that the gateway rejects (e.g. HTTP 409) must not bubble up as a raw
-            // exception; return a clean failed state so the frontend can show the error.
+            // exception; return a clean failed state so the frontend can show the error. Cancel the
+            // still-pending order so a rejected challenge-confirm does not leave it orphaned (the
+            // frictionless FAILED branch above already cancels).
             $this->logger->debug('NetPay 3DS confirm failed: ' . $e->getMessage());
+            $this->cancelOrderByToken($transactionId, '3DS confirm failed: ' . $e->getMessage());
             return json_encode([
                 'status' => 'failed',
                 'transactionTokenId' => $transactionId,

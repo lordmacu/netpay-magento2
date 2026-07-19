@@ -77,7 +77,7 @@ parameters:
 
 		-
 			message: "#^Call to an undefined method Magento\\\\Checkout\\\\Model\\\\Session\\:\\:setAdditionalInfo\\(\\)\\.$#"
-			count: 3
+			count: 4
 			path: Controller/Payment/Reside.php
 
 		-
@@ -321,8 +321,13 @@ parameters:
 			path: Model/ChargesApiManagement.php
 
 		-
+			message: "#^Call to an undefined method Magento\\\\Sales\\\\Api\\\\Data\\\\OrderInterface\\:\\:canCancel\\(\\)\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
 			message: "#^Call to an undefined method Magento\\\\Sales\\\\Api\\\\Data\\\\OrderInterface\\:\\:registerCancellation\\(\\)\\.$#"
-			count: 2
+			count: 3
 			path: Model/ChargesApiManagement.php
 
 		-
@@ -368,11 +373,6 @@ parameters:
 		-
 			message: "#^Method Netpay\\\\Payment\\\\Model\\\\ChargesApiManagement\\:\\:getCharges\\(\\) should return string but empty return statement found\\.$#"
 			count: 3
-			path: Model/ChargesApiManagement.php
-
-		-
-			message: "#^Method Netpay\\\\Payment\\\\Model\\\\ChargesApiManagement\\:\\:getCharges\\(\\) should return string but returns false\\.$#"
-			count: 1
 			path: Model/ChargesApiManagement.php
 
 		-
