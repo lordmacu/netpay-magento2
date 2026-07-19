@@ -331,6 +331,17 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
             }else{
                 $order->setToken($charges->transactionTokenId);
                 $order->addCommentToStatusHistory('Netpay Transaction ID: ' . $charges->transactionTokenId);
+                // Record the card BIN prefix + last four on the order (matches NetPay's WooCommerce
+                // plugin), so guest / one-time cards are identifiable without a saved vault token.
+                $card = $charges->paymentSource->card ?? null;
+                if ($card !== null) {
+                    if (!empty($card->cardPrefix)) {
+                        $order->addCommentToStatusHistory('NetPay cardPrefix: ' . $card->cardPrefix);
+                    }
+                    if (!empty($card->lastFourDigits)) {
+                        $order->addCommentToStatusHistory('NetPay lastFourDigits: ' . $card->lastFourDigits);
+                    }
+                }
             }
             $order->save();
         } catch (\Exception $ex) {

@@ -4,6 +4,16 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.7
+
+Two cosmetic 3-D Secure parity fixes vs NetPay's WooCommerce plugin (from the strict review):
+- **Card details on the order:** the charge now records the `cardPrefix` and `lastFourDigits` (from
+  `paymentSource.card`) as order comments, so guest / one-time cards are identifiable without a saved
+  vault token — matching the notes the WooCommerce plugin adds.
+- **`insecure` status:** the redirect-return status message used `unsecure`; the actual gateway term
+  is `insecure` (matching WooCommerce). The status is also lower-cased now, so the upper-case gateway
+  values (`FAILED`, `REJECTED`, …) actually match their message instead of always hitting the default.
+
 ## 1.0.6
 
 Strict 3-D Secure review against NetPay's WooCommerce plugin. The happy path (DDC/referenceId,

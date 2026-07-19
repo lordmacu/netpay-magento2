@@ -245,7 +245,9 @@ class Reside extends Action
      */
     public function getInfoMessageByStatus($status)
     {
-        switch ($status) {
+        // Lower-case the status: the gateway returns it upper-case (e.g. FAILED, REJECTED), while the
+        // cases below are lower-case — without this the switch always fell through to the default.
+        switch (strtolower((string) $status)) {
             case "review":
                 $message = __("Netpay transaction has the status review!");
                 break;
@@ -253,15 +255,19 @@ class Reside extends Action
                 $message = __("Netpay transaction failed!");
                 break;
             case "rejected":
+            case "reject":
                 $message = __("Netpay transaction is rejected!");
                 break;
+            case "insecure":
             case "unsecure":
-                $message = __("Netpay transaction is unsecure!");
+                // 'insecure' is the actual gateway term (matches the WooCommerce plugin); 'unsecure'
+                // is kept as a defensive alias.
+                $message = __("Netpay transaction is insecure!");
                 break;
             default:
                 $message = __("Netpay transaction has an unknown status!");
         }
-        
+
         return $message;
     }
 }
