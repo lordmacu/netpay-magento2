@@ -15,6 +15,7 @@ use Netpay\Payment\Logger\Logger;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Sales\Model\OrderRepository;
 use \Magento\Framework\App\Response\RedirectInterface;
+use Magento\Framework\HTTP\Header as HttpHeader;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\Event\Observer as Observer;
@@ -114,6 +115,9 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
     /** @var RemoteAddress */
     private $remoteAddress;
 
+    /** @var HttpHeader */
+    private $httpHeader;
+
     /**
      * @param DataHelper $dataHelper
      * @param StoreManagerInterface $storeManager
@@ -146,7 +150,8 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
         Salesorder $salesorder,
         CustomConfigProvider $customConfigProvider,
         OrderCollectionFactory $orderCollectionFactory,
-        RemoteAddress $remoteAddress
+        RemoteAddress $remoteAddress,
+        HttpHeader $httpHeader
     ) {
         $this->dataHelper = $dataHelper;
         $this->configHelper = $configHelper;
@@ -171,6 +176,7 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
         $this->customConfigProvider = $customConfigProvider;
         $this->orderCollectionFactory = $orderCollectionFactory;
         $this->remoteAddress = $remoteAddress;
+        $this->httpHeader = $httpHeader;
     }
 
     /**
@@ -271,6 +277,15 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
         $others->description = (string) __('Cobro de la orden %1', $order->getIncrementId());
         try {
             $paymentManager = $this->dataHelper->getPaymentManager();
+            // Anti-fraud: send the shopper's real browser User-Agent on the charge (matches NetPay's
+            // WooCommerce plugin, which forwards $_SERVER['HTTP_USER_AGENT']). The /V1/payment/charges
+            // webapi call is an AJAX from the browser, so its request carries the browser UA. Setting it
+            // on the SDK's per-request Configuration singleton (read by OrdersApi when building the charge
+            // request) overrides the default 'Swagger-Codegen' UA without touching the vendored SDK.
+            $browserUserAgent = (string) $this->httpHeader->getHttpUserAgent();
+            if ($browserUserAgent !== '') {
+                \Netpay\Client\Configuration::getDefaultConfiguration()->setUserAgent($browserUserAgent);
+            }
             $others->saveCard = $saveCc;
             $others->referenceID = $referenceID;
             $paymentManager->setShopdata($order, $others);

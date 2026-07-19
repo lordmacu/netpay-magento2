@@ -351,11 +351,6 @@ parameters:
 			path: Model/ChargesApiManagement.php
 
 		-
-			message: "#^Call to method setVaultPaymentToken\\(\\) on an unknown class Magento\\\\Sales\\\\Api\\\\Data\\\\OrderPaymentExtensionInterface\\.$#"
-			count: 1
-			path: Model/ChargesApiManagement.php
-
-		-
 			message: "#^Cannot use array destructuring on string\\.$#"
 			count: 2
 			path: Model/ChargesApiManagement.php

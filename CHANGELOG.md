@@ -4,6 +4,21 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.5
+
+- **Anti-fraud:** the card charge now sends the shopper's real browser **User-Agent**, matching
+  NetPay's WooCommerce plugin (which forwards `$_SERVER['HTTP_USER_AGENT']`). Previously every charge
+  went out with the SDK default `Swagger-Codegen/1.0.0/php`. `getCharges` reads the browser UA
+  (Magento HTTP Header) and sets it on the SDK `Configuration` singleton before the charge, so
+  `OrdersApi` emits it as the request `User-Agent` — no vendored-SDK edit needed. Scoped to the
+  actual charge (save-card / delete-card / 3DS-confirm return earlier).
+- **Webhook (no change, by design):** audited the webhook against the WooCommerce reference. The
+  WooCommerce plugin does **no** webhook authentication at all (open endpoint, no IP allowlist, no
+  signature, trusts the payload). This module already exceeds that: it re-verifies every webhook
+  server-to-server against the NetPay gateway (never trusting the payload status) and checks the
+  amount, plus an IP allowlist. Gateway re-verification is the real anti-forgery control, so no IP
+  hardening was added (a source-IP check is not the security boundary).
+
 ## 1.0.4
 
 - **Anti-fraud:** the checkout now forwards the ThreatMetrix device fingerprint on the card charge,
