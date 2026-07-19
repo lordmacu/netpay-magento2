@@ -4,6 +4,13 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.10
+
+- **Install defaults:** the card method now ships **active in test mode** with a clean default title
+  (`Tarjeta (NetPay)`) and the brand icons on, via `config.xml`. After copying the module and running
+  `setup:upgrade` the method appears in checkout out of the box; you only add your API keys (which
+  must never be committed). Override any of these in the admin (Stores → Config → Payment Methods).
+
 ## 1.0.9
 
 - **Address normalization on the charge:** the billing/shipping text (firstname, lastname, city,

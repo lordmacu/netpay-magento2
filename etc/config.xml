@@ -5,9 +5,10 @@
             <netpay>
                 <model>Netpay\Payment\Model\Netpay</model>
                 <enable>1</enable>
+                <active>1</active>
                 <payment_mode>test</payment_mode>
-                <title>Netpay Credit Card - The New Payment.</title>
-                <description>Secure payment with Netpay.</description>
+                <title>Tarjeta (NetPay)</title>
+                <description>Paga de forma segura con tarjeta de crédito o débito.</description>
                 <accept_visa>1</accept_visa>
                 <accept_mastercard>1</accept_mastercard>
                 <accept_amex>1</accept_amex>
