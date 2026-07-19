@@ -4,6 +4,15 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.9
+
+- **Address normalization on the charge:** the billing/shipping text (firstname, lastname, city,
+  line1, line2) is now accent-folded and stripped of disallowed characters, and the phone loses its
+  `+52`/`+1` country code, before being sent to NetPay — matching the WooCommerce plugin
+  (`replace_caracters` + `replace_country_code`) that NetPay's Decision Manager is tuned against
+  (e.g. `José` → `Jose`, `Calle Ñandú #5` → `Calle Nandu 5`). Only the copy sent to the gateway is
+  changed; the Magento order address is untouched.
+
 ## 1.0.8
 
 Two admin/checkout parity items vs NetPay's WooCommerce plugin (from the admin-surface review):
