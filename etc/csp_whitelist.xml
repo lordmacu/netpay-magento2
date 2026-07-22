@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * NetPay Content-Security-Policy whitelist.
+ *
+ * The checkout/payment area serves an ENFORCED CSP (the storefront default is report-only, but
+ * payment pages restrict script-src). NetPay's card form and 3-D Secure flow load third-party
+ * scripts and iframes at runtime, so their hosts must be whitelisted or the browser blocks them
+ * and the payment form never initializes:
+ *   - docs.netpay.mx  : NetPay.js SDK (docs.netpay.mx/cdn/v1.3/netpay.min.js) + hosted card form
+ *                       iframe + the IP lookup (docs.netpay.mx/lookup/ipaddress).
+ *   - cdn.netpay.mx   : the 3DS wrapper (cdn.netpay.mx/js/latest/netpay3ds-noConflict.js) and its
+ *                       device-data / challenge iframes.
+ *   - h.online-metrix.net : ThreatMetrix device fingerprint (script + hidden iframe + tracking img)
+ *                       used by NetPay's Decision Manager.
+ * Cardinal Commerce hosts (songbird, *.cardinalcommerce.com) that the 3DS challenge uses are already
+ * whitelisted by Magento core, so they are not repeated here.
+ */
+-->
+<csp_whitelist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp:etc/csp_whitelist.xsd">
+    <policies>
+        <policy id="script-src">
+            <values>
+                <value id="netpay_docs" type="host">https://docs.netpay.mx</value>
+                <value id="netpay_cdn" type="host">https://cdn.netpay.mx</value>
+                <value id="netpay_threatmetrix" type="host">https://*.online-metrix.net</value>
+            </values>
+        </policy>
+        <policy id="style-src">
+            <values>
+                <value id="netpay_docs" type="host">https://docs.netpay.mx</value>
+                <value id="netpay_cdn" type="host">https://cdn.netpay.mx</value>
+            </values>
+        </policy>
+        <policy id="img-src">
+            <values>
+                <value id="netpay_docs" type="host">https://docs.netpay.mx</value>
+                <value id="netpay_cdn" type="host">https://cdn.netpay.mx</value>
+                <value id="netpay_threatmetrix" type="host">https://*.online-metrix.net</value>
+            </values>
+        </policy>
+        <policy id="font-src">
+            <values>
+                <value id="netpay_docs" type="host">https://docs.netpay.mx</value>
+                <value id="netpay_cdn" type="host">https://cdn.netpay.mx</value>
+            </values>
+        </policy>
+        <policy id="frame-src">
+            <values>
+                <value id="netpay_docs" type="host">https://docs.netpay.mx</value>
+                <value id="netpay_cdn" type="host">https://cdn.netpay.mx</value>
+                <value id="netpay_threatmetrix" type="host">https://*.online-metrix.net</value>
+            </values>
+        </policy>
+        <policy id="child-src">
+            <values>
+                <value id="netpay_docs" type="host">https://docs.netpay.mx</value>
+                <value id="netpay_cdn" type="host">https://cdn.netpay.mx</value>
+                <value id="netpay_threatmetrix" type="host">https://*.online-metrix.net</value>
+            </values>
+        </policy>
+        <policy id="connect-src">
+            <values>
+                <value id="netpay_docs" type="host">https://docs.netpay.mx</value>
+                <value id="netpay_cdn" type="host">https://cdn.netpay.mx</value>
+                <value id="netpay_threatmetrix" type="host">https://*.online-metrix.net</value>
+                <value id="netpay_gateway_sandbox" type="host">https://gateway-154.netpaydev.com</value>
+                <value id="netpay_gateway_live" type="host">https://suite.netpay.com.mx</value>
+            </values>
+        </policy>
+    </policies>
+</csp_whitelist>

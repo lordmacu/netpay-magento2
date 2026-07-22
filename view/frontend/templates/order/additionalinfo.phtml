@@ -29,7 +29,9 @@ $response = $block->getAdditionalInfo();
         <div class="refrence_no_cash">
             <p class="line1"><?= $escaper->escapeHtml(__('Número de referencia:')) ?></p>
             <p class="line2"><?= $escaper->escapeHtml($response->paymentSource->oxxoPay->reference) ?></p>
+            <?php if (!empty($response->paymentSource->oxxoPay->expirationDate)) : ?>
             <p class="line3"><?= $escaper->escapeHtml(__('Expira el ')) ?><?= $escaper->escapeHtml(date("d/m/Y", strtotime((string) $response->paymentSource->oxxoPay->expirationDate))) ?></p>
+            <?php endif; ?>
         </div>
     </div>
     <?php endif; ?>

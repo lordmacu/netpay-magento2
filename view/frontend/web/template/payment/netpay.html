@@ -26,7 +26,7 @@
         <!-- ko if: getMode() -->
         <div class="netpay-test-mode-notice"
              style="margin: 8px 0; padding: 8px 12px; background: #fff7ed; border: 1px solid #ffb347; border-radius: 4px; font-size: 13px; line-height: 1.4;">
-            <span data-bind="i18n: 'MODO PRUEBAS ACTIVADO. Las transacciones no se envían al banco emisor. Usa la tarjeta 5200 0000 0000 0007, una fecha de expiración válida, cualquier CVV y el correo accept@netpay.com.mx para una transacción aprobada.'"></span>
+            <span data-bind="i18n: 'MODO PRUEBAS ACTIVADO. Las transacciones no se envían al banco emisor. Usa la tarjeta 5200 0000 0000 0007, una fecha de expiración válida y cualquier CVV. El correo del pedido decide el escenario del sandbox: accept@netpay.com.mx aprueba, review@netpay.com.mx dispara el reto 3DS (contraseña 1234) y decline@netpay.com.mx rechaza.'"></span>
         </div>
         <!-- /ko -->
         <div class="payment-method-billing-address">

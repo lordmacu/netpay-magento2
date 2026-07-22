@@ -22,8 +22,11 @@ class Shopsystem
     public static function prepareShopCartObj($cart, $otherData)
     {
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $currencysymbol = $objectManager->get('Magento\Store\Model\StoreManagerInterface');
-        $currency = $currencysymbol->getStore()->getCurrentCurrencyCode();
+        // NetPay México only processes MXN, so the charge currency is fixed to MXN — matching
+        // NetPay's WooCommerce plugin, which hardcodes "MXN" regardless of the store's display
+        // currency. Sending the store's display currency (e.g. USD) would be rejected by the
+        // gateway or mismatch the peso amount.
+        $currency = 'MXN';
         $customer = $objectManager->create('Magento\Customer\Model\Customer');
         if (count($cart->getAllVisibleItems()) > 0) {
             foreach ($cart->getAllVisibleItems() as $item) {

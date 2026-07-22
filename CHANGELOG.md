@@ -4,6 +4,66 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.13
+
+Security and robustness pass from a full comparative audit vs the WooCommerce plugin:
+- **TLS verification enabled:** the SDK's Guzzle client no longer disables certificate verification
+  (`verify => false` → `true`). NetPay's live and sandbox hosts present publicly-trusted certs, so
+  disabling it only exposed the API key and card token to a man-in-the-middle. (`Sdk/businessLayer/Features/Feature.php`)
+- **Charge currency fixed to MXN:** the charge now always sends `MXN` (matching the WooCommerce
+  plugin, which hardcodes it) instead of the store's display currency — a non-MXN display store
+  would otherwise send a currency the gateway rejects / that mismatches the peso amount. (`Sdk/businessLayer/Magento/Shopsystem.php`)
+- **Webhook IP resolution hardened:** the allowlist check now anchors on the real TCP peer
+  (`REMOTE_ADDR`) instead of the spoofable `X-Forwarded-For` / `Client-IP` headers, falling back to
+  the forwarded chain only when the peer is a local reverse proxy. (The server-to-server
+  re-verification remains the actual anti-forgery control.) (`Controller/Payment/ApiController.php`)
+- **`getClientId` no-default-address crash fixed:** a logged-in customer with **no default billing
+  address** who saved or used a card hit an uncaught `getById(null)` (the lookup was outside the
+  try/catch), failing the whole charge. The lookup is now guarded. (`Model/ChargesApiManagement.php`)
+- **Documented (not blindly fixed) — saved card not attached to an existing NetPay client:** saving
+  a NEW card via the checkout checkbox for a returning customer that already had a NetPay client id
+  stores the card only in Magento's vault, so it does not appear at checkout (the config
+  cross-references NetPay's `paymentSources`). An earlier attempt to attach it with
+  `updateClient`-before-charge was **reverted**: a sandbox spike showed NetPay returns 409
+  "conflicto con la tarjeta" for an already-consumed/attached token, so attaching then charging the
+  same token risks failing the charge (turning a cosmetic issue into a payment failure). The correct
+  fix is on the charge itself (`saveCard=true` + `client.id`, which the spike proved auto-attaches),
+  to be wired once validated E2E with `accept@netpay.com.mx`. (`Model/ChargesApiManagement.php`)
+- **OXXO out-of-range amount message:** the cash/OXXO failure branch now surfaces a specific
+  "amount out of range for OXXO" message when NetPay returns `Amount invalid`, instead of the
+  generic failure. (`Model/ChargesApiManagement.php`)
+- **OXXO receipt null-safety:** the success receipt no longer calls `strtotime()` on a missing
+  `expirationDate`. (`view/frontend/templates/order/additionalinfo.phtml`)
+- **CSP whitelist (checkout):** added `etc/csp_whitelist.xml` whitelisting NetPay's runtime script /
+  iframe / connect hosts (`docs.netpay.mx`, `cdn.netpay.mx`, `*.online-metrix.net`, and the gateway
+  hosts). Magento's checkout/payment area serves an ENFORCED CSP; without this the card form's
+  third-party scripts (SDK + 3DS wrapper + ThreatMetrix) are blocked and the form never initializes.
+  (Verified E2E: with the whitelist the hosted card form renders and a sandbox charge approves.)
+- **Card-form rendering fix:** the init callback no longer gates hosted-form generation on
+  `additionalValidators.validate()`. Running it at render time left the "Ha ocurrido un error"
+  placeholder visible and never generated the form whenever any registered validator (e.g. an
+  unchecked checkout-agreement / legal-acceptance checkbox) was unsatisfied at load. Agreements are
+  now validated at **order placement** instead — added to both the new-card (`success`) and
+  saved-card (`placeOrder`) submit paths. (`view/frontend/web/js/view/payment/method-renderer/netpay.js`)
+- **Test-mode banner:** now lists the three sandbox emails so a tester can exercise every path —
+  `accept@netpay.com.mx` (approve), `review@netpay.com.mx` (3DS challenge, password 1234),
+  `decline@netpay.com.mx` (decline). (`view/frontend/web/template/payment/netpay.html`)
+
+### Not gaps vs WooCommerce (verified against the plugin source)
+The active, shipped flow in NetPay's WooCommerce plugin is **card + MSI only**. OXXO, cash and SPEI
+exist in the plugin's code but are **off/unregistered by default**: `NETPAY_ENABLE_OXXO` defaults to
+`0` (which hides the OXXO gateway), the cash gateway is not registered in the payment factory, and
+the `cep.paid` (SPEI) IPN is bound to that disabled cash path. So:
+- **OXXO endpoint** — off by default, but confirmed against NetPay's official docs: the documented
+  OXXO endpoint is the dedicated `POST /v3/oxxopay/reference`
+  (docs.netpay.com.mx/reference/api-pagos-en-efectivo-por-oxxo), whereas this module's `netpaycash`
+  method (off by default) posts to `POST /v3.5/charges` with `paymentMethod=oxxopay`. Only relevant
+  if a merchant enables OXXO in Magento — then migrate to the dedicated endpoint (needs a new
+  OrdersApi method). All other endpoints match the official docs exactly (charges, confirm,
+  transactions, refund, v3/clients + assign/delete card, webhooks, config, stores).
+- **SPEI/CEP** — WooCommerce does not ship an active SPEI method either. Adding SPEI to Magento would
+  be a net-new feature, not a parity fix.
+
 ## 1.0.12
 
 Minor WooCommerce-parity items:

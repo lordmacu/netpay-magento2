@@ -339,9 +339,11 @@ define(
                         $("#netpay_cc_type_cvv_div").hide();
                         $("#netpay_placeorder").hide();
 
-                        if (!additionalValidators.validate()) {
-                            return;
-                        }
+                        // NOTE: do NOT gate the hosted-card-form rendering on additionalValidators.validate().
+                        // Running it here aborts form generation (and leaves the "Ha ocurrido un error"
+                        // placeholder visible) whenever any registered validator is not yet satisfied at
+                        // load — e.g. unchecked checkout agreements / legal-acceptance checkboxes. Those
+                        // must be validated when the order is PLACED, not when the card form is drawn.
 
                         NetPay.setApiKey(window.checkoutConfig.payment.netpay.public_key);
                         NetPay.setSandboxMode(self.getMode());
@@ -372,6 +374,15 @@ define(
                             if (!window.referenceID) {
                                 fullScreenLoader.stopLoader();
                                 alert('Estamos preparando el pago seguro. Espera unos segundos e intenta de nuevo.');
+                                self.isPlaceOrderActionAllowed(true);
+                                return;
+                            }
+                            // Enforce checkout agreements / legal-acceptance checkboxes at order
+                            // placement. The init-time validate() gate was removed (it wrongly blocked
+                            // form rendering); this is the correct place to validate — block the order
+                            // until every registered validator passes.
+                            if (!additionalValidators.validate()) {
+                                fullScreenLoader.stopLoader();
                                 self.isPlaceOrderActionAllowed(true);
                                 return;
                             }
@@ -572,6 +583,11 @@ define(
                 // 3DS device data collection must finish before charging (see note above).
                 if (!window.referenceID) {
                     alert('Estamos preparando el pago seguro. Espera unos segundos e intenta de nuevo.');
+                    return this;
+                }
+                // Enforce checkout agreements / legal-acceptance checkboxes at order placement
+                // (saved-card path); validation is not gated at form-render time.
+                if (!additionalValidators.validate()) {
                     return this;
                 }
                 self.clearThreeDsStorage();

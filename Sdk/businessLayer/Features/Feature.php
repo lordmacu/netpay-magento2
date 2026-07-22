@@ -85,7 +85,11 @@ class Feature
         $class = new ReflectionClass($apiClassname);
         $config = $this->createApiConfigInstance($paymentManager->getAuthParams(), $paymentManager->getApiHost());
         $arguments = [
-            new Client(array('verify' => false)),
+            // Verify the gateway's TLS certificate. NetPay's live and sandbox hosts
+            // (suite.netpay.com.mx / gateway-154.netpaydev.com) present publicly-trusted
+            // certificates, so there is no reason to disable verification — leaving it off
+            // exposes the API key and card token to a man-in-the-middle.
+            new Client(array('verify' => true)),
             $config
         ];
         

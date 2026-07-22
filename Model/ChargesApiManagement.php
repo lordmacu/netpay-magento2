@@ -387,7 +387,15 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
                 $this->logger->debug('Netpay cash order not successful, status: ' . ($charges->status ?? 'unknown'));
                 $order->registerCancellation('There was an issue in Netpay. Please contact us.')->save();
                 $this->checkoutSession->restoreQuote();
-                $message = __('Placing Order in Netpay wasnt successful.');
+                // OXXO enforces a min/max amount per reference. NetPay returns "Amount invalid" in
+                // that case; surface a specific, actionable message instead of the generic one
+                // (matches NetPay's WooCommerce plugin, which special-cases this response).
+                $rawMessage = $charges->message ?? ($charges->responseMsg ?? '');
+                if (stripos((string) $rawMessage, 'amount invalid') !== false) {
+                    $message = __('El monto de la orden está fuera del rango permitido para pago en efectivo (OXXO). Usa otro método de pago.');
+                } else {
+                    $message = __('Placing Order in Netpay wasnt successful.');
+                }
                 $this->messageManager->addErrorMessage($message);
                 return $this->storeManager->getStore()->getUrl('checkout/cart', array('_secure' => true));
             }
@@ -431,51 +439,68 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
     private function getClientId($customer, $token, $saveCc, $cardSelected)
     {
         $customerLink = $this->customerLinkRepository->get($customer->getId());
-        if ($customer->getId()) {
-            $others = new DataObject();
-            $others->source = $token;
-            $others->type = 'card';
-            $others->clientid = $customerLink->getNetpayId();
-            $others->firstname = $customer->getFirstname();
-            $others->lastname = $customer->getLastname();
-            $billingAddressId = $customer->getDefaultBilling();
-            $shippingAddressId = $customer->getDefaultShipping();
-            $billingAddress = $this->addressRepository->getById($billingAddressId);
-            $telephone = $billingAddress->getTelephone();
-            if ($telephone) {
-                $others->phone = $telephone;
-            } else {
-                $others->phone = '-';
-            }
-            $others->email = $customer->getEmail();
-            $others->identifier = $customer->getId();
-
-            try {
-                $paymentManager = $this->dataHelper->getPaymentManager();
-                $paymentManager->setShopdata(null, $others);
-                if (empty($customerLink->getNetpayId())) {
-                    $client = $paymentManager->setClient();
-                    $customerLink = $this->customerLink;
-                    $customerLink->setNetpayId($client->id)
-                        ->setCustomerId($customer->getId())
-                        ->setStoreId((int) $this->storeManager->getStore()->getId());
-                    $this->customerLinkRepository->save($customerLink);
-                    return [$client->id, true];
-                }
-                if (!$saveCc && $cardSelected) {
-                    $customerLink->getNetpayId();
-                    return [$customerLink->getNetpayId(), false];
-                }
-            } catch (\Exception $ex) {
-                $this->logger->debug($ex->getMessage());
-            }
-
-            // Fallback: returning customer that already has a NetPay client id, or a failed lookup.
-            // Always return a 2-element array so the list() destructuring in the caller is safe.
-            return [$customerLink->getNetpayId(), false];
+        if (!$customer->getId()) {
+            return [null, false];
         }
 
-        return [null, false];
+        $others = new DataObject();
+        $others->source = $token;
+        $others->type = 'card';
+        $others->clientid = $customerLink->getNetpayId();
+        $others->firstname = $customer->getFirstname();
+        $others->lastname = $customer->getLastname();
+        // A logged-in customer may have no default billing address. Look up the phone defensively:
+        // previously getById(null) threw here — OUTSIDE the try below — turning "save/use a card
+        // without a default address" into an uncaught exception that failed the whole charge.
+        $others->phone = '-';
+        try {
+            $billingAddressId = $customer->getDefaultBilling();
+            if ($billingAddressId) {
+                $telephone = $this->addressRepository->getById($billingAddressId)->getTelephone();
+                if ($telephone) {
+                    $others->phone = $telephone;
+                }
+            }
+        } catch (\Exception $addrEx) {
+            $this->logger->debug('NetPay getClientId address lookup failed: ' . $addrEx->getMessage());
+        }
+        $others->email = $customer->getEmail();
+        $others->identifier = $customer->getId();
+
+        try {
+            $paymentManager = $this->dataHelper->getPaymentManager();
+            $paymentManager->setShopdata(null, $others);
+            if (empty($customerLink->getNetpayId())) {
+                $client = $paymentManager->setClient();
+                $customerLink = $this->customerLink;
+                $customerLink->setNetpayId($client->id)
+                    ->setCustomerId($customer->getId())
+                    ->setStoreId((int) $this->storeManager->getStore()->getId());
+                $this->customerLinkRepository->save($customerLink);
+                return [$client->id, true];
+            }
+            // Returning customer that already has a NetPay client id.
+            //
+            // KNOWN GAP (needs E2E): saving a NEW card via the checkout checkbox for such a customer
+            // stores the card only in Magento's vault, not in the NetPay client, so it does not
+            // appear at checkout (getConfig cross-references NetPay's paymentSources). Do NOT attach
+            // it here with updateClient-before-charge: the sandbox spike showed NetPay returns 409
+            // "conflicto con la tarjeta" for a token that is already consumed/attached, so attaching
+            // the token and then charging the same token risks failing the charge (a regression on a
+            // cosmetic issue). The correct fix is on the charge itself (send saveCard=true together
+            // with client.id so NetPay attaches the source as part of the charge — the spike proved
+            // saveCard=true auto-creates/attaches the client) — to be wired once validated E2E with
+            // accept@netpay.com.mx.
+            if (!$saveCc && $cardSelected) {
+                return [$customerLink->getNetpayId(), false];
+            }
+        } catch (\Exception $ex) {
+            $this->logger->debug($ex->getMessage());
+        }
+
+        // Fallback: returning customer that already has a NetPay client id, or a failed lookup.
+        // Always return a 2-element array so the list() destructuring in the caller is safe.
+        return [$customerLink->getNetpayId(), false];
     }
 
     /**

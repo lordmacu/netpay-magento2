@@ -247,12 +247,48 @@ class ApiController extends Action implements CsrfAwareActionInterface, HttpPost
         return false;
     }
     
+    /**
+     * Resolve the client IP for the webhook allowlist check.
+     *
+     * The decision must be anchored on the real TCP peer (REMOTE_ADDR), which a caller cannot
+     * spoof — NOT on X-Forwarded-For / Client-IP, which are attacker-controlled request headers.
+     * The previous version returned the raw forwarded header first, so anyone could send
+     * `X-Forwarded-For: <a NetPay IP>` and pass the allowlist. We only fall back to the forwarded
+     * chain when the peer is a local reverse proxy (loopback/private range), and then take the
+     * first *public* address. This is defense-in-depth: the real anti-forgery control is the
+     * server-to-server re-verification of the transaction against the gateway (see execute()).
+     *
+     * @return string
+     */
     private function get_ip_addr() {
-        return isset($_SERVER['HTTP_CLIENT_IP']) 
-        ? $_SERVER['HTTP_CLIENT_IP'] 
-        : (isset($_SERVER['HTTP_X_FORWARDED_FOR']) 
-          ? $_SERVER['HTTP_X_FORWARDED_FOR'] 
-          : $_SERVER['REMOTE_ADDR']);
+        $remote = isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : '';
+        if ($remote !== '' && $this->is_public_ip($remote)) {
+            return $remote;
+        }
+        $forwarded = isset($_SERVER['HTTP_X_FORWARDED_FOR'])
+            ? (string) $_SERVER['HTTP_X_FORWARDED_FOR']
+            : (isset($_SERVER['HTTP_CLIENT_IP']) ? (string) $_SERVER['HTTP_CLIENT_IP'] : '');
+        foreach (explode(',', $forwarded) as $candidate) {
+            $candidate = trim($candidate);
+            if ($candidate !== '' && $this->is_public_ip($candidate)) {
+                return $candidate;
+            }
+        }
+        return $remote !== '' ? $remote : '0.0.0.0';
+    }
+
+    /**
+     * Whether $ip is a valid, publicly-routable address (not private/reserved/loopback).
+     *
+     * @param string $ip
+     * @return bool
+     */
+    private function is_public_ip($ip) {
+        return filter_var(
+            $ip,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        ) !== false;
     }
 
 }
