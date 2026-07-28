@@ -115,14 +115,32 @@ The card flow follows NetPay's contract (aligned with NetPay's WooCommerce plugi
 
 ## Webhook
 
-Register the webhook URL from the admin config (OXXO section). The receiver
-(`Controller/Payment/ApiController`, route `netpay/payment/apicontroller`):
+The URL is registered **once per NetPay account**, not per transaction: the *Update in Netpay*
+button in the admin config (OXXO section) calls `POST`/`PUT /v3/webhooks/` with
+`{"webhook": "<url>"}`, authenticated with the secret key. The charge request does not carry it
+(`merchantRedirectUrl` on the charge is the 3DS browser return, a different thing). Remember to
+**Save Config** afterwards — the button registers in NetPay, it does not persist the Magento value.
 
-- Validates the source IP against NetPay's ranges.
-- Matches the order by token and amount.
-- **OXXO** (`oxxopay.paid`): verifies with NetPay and invoices the order.
-- **Card** (any other event): re-verifies the transaction against `GET /v3/transactions` and settles
-  (`DONE`/`CHARGEABLE` → invoice) or cancels (`FAILED`/`REJECT`), idempotently.
+The receiver (`Controller/Payment/ApiController`, route `netpay/payment/apicontroller`) handles the
+same two events as NetPay's WooCommerce plugin, which this module is ported from. Both are
+**asynchronous** payment notifications — a card charge settles inline at checkout, not here. No
+notification is trusted: each one is re-verified server-to-server against the gateway.
+
+| Event | Verified against | Settles when | Order located by |
+|---|---|---|---|
+| `cep.paid` (SPEI/CEP) | `GET /v3/transactions/{data.transactionId}` | `status` is `DONE`/`CHARGEABLE` **and** `transactionTokenId` **and** `amount` match the notification | `sales_order.token` = `data.transactionId` |
+| `oxxopay.paid` | `GET /v3/oxxopay/transaction/{data.transactionId}` | `status` is `C` **and** `transactionId` **and** `amount` match | `sales_order.token` = `data.reference` |
+
+- `data.merchantRefCode` (the order's entity id, sent as `billing.merchantReferenceCode` on the
+  charge) is the fallback locator for both events — the WooCommerce plugin resolves OXXO through it.
+- Any other event is acknowledged with `200` and **logged with its name**, never guessed at: a
+  non-payment event (a refund, a chargeback) would still read as a settled transaction on the
+  gateway and must not invoice the order. The log is where an unknown event name will surface.
+- The order's grand total is checked against the notification amount before any gateway call.
+- Terminal declines (`FAILED`/`REJECT`) cancel the still-pending order — an addition over the
+  WooCommerce plugin, which leaves it untouched.
+- Invoicing and the order note are idempotent: a repeated notification does not duplicate either.
+- Source IPs are checked against NetPay's ranges, anchored on the real TCP peer.
 - Config (keys/host) is scoped to the **order's** store, not the default store.
 
 ## Architecture

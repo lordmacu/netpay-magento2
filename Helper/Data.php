@@ -94,9 +94,22 @@ class Data extends AbstractHelper
         return $this->checkoutSession->getQuote();
     }
 
-    public function getPaymentManager()
+    /**
+     * Build a PaymentManager bound to a store's NetPay credentials.
+     *
+     * @param int|null $storeId Store to read the credentials from. Defaults to the current store,
+     *                          which is what the storefront wants. Adminhtml callers MUST pass the
+     *                          store explicitly: in the admin area the "current store" resolves to
+     *                          the admin store (0), i.e. the *default* scope config — so a merchant
+     *                          configuring a specific website would otherwise act on the wrong
+     *                          NetPay account.
+     * @return PaymentManager
+     */
+    public function getPaymentManager($storeId = null)
     {
-        $storeId = $this->configHelper->getStoreId();
+        if ($storeId === null) {
+            $storeId = $this->configHelper->getStoreId();
+        }
         $backofficeParams = [
             'secret_key_test' =>  $this->configHelper->getSecretKeyTest($storeId),
             'secret_key_live' => $this->configHelper->getSecretKeyLive($storeId),

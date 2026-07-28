@@ -4,6 +4,64 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.14
+
+Webhook receiver aligned with the WooCommerce plugin's event contract
+(`netpay-checkout.php::process_ipn`), after testing the receiver against the real payload shape:
+
+- **Non-OXXO notifications never matched an order (fixed).** The receiver looked the order up by
+  `data.reference` for *every* event. For a non-OXXO charge `sales_order.token` holds the
+  `transactionTokenId`, which NetPay sends as **`data.transactionId`** — so that branch could never
+  find its order, and it also re-verified the wrong id against the gateway. It now resolves and
+  verifies through `data.transactionId`. (`Controller/Payment/ApiController.php`)
+- **Explicit event dispatch.** `cep.paid` (SPEI/CEP) and `oxxopay.paid`, the two events the
+  WooCommerce plugin handles on its cash IPN listener. Any other event is acknowledged with `200`
+  and **logged with its name** instead of being force-fed through the transaction path: a
+  non-payment event (a refund, a chargeback) would still read as a settled transaction on the
+  gateway and would have invoiced the order. The log is where an unknown event name will surface.
+- **Gateway match required before settling.** Following the WooCommerce plugin, a transaction only
+  settles when the gateway's `transactionTokenId` **and** `amount` match the notification (not just
+  the status); OXXO keeps requiring `status == "C"` plus id and amount.
+- **`merchantRefCode` fallback.** Both events fall back to locating the order by its entity id,
+  which the SDK sends as `billing.merchantReferenceCode` on the charge — the field the WooCommerce
+  plugin uses to resolve OXXO notifications.
+- **Empty token no longer matches an arbitrary order.** A notification with no usable identifier
+  filtered `sales_order.token` on `''`, which matches every order that has no NetPay token.
+- **No more PHP warnings on unexpected payloads**, and a malformed body is now rejected as
+  `Invalid payload` instead of being indistinguishable from an unhandled event.
+- **Webhook registration fixed for a fresh account.** Two problems in `UpdateWebhook`
+  (`Controller/Adminhtml/System/Config/UpdateWebhook.php`):
+  1. The "does a webhook already exist?" lookup ran inside the same `try` as the create/update, so
+     a failing lookup aborted the whole action and showed the misleading *"make sure you have cash
+     option enabled in manager"*. It is now isolated, and real failures surface the gateway message.
+  2. Create-vs-update was decided on the `webhook` **value** being empty. NetPay's docs state the
+     record already exists with its id and the `webhook` field starts as `NULL`, so a fresh account
+     took the create (`POST`) branch when it needed the update (`PUT`) one. It now decides on the
+     presence of the record's **id**, matching the WooCommerce plugin
+     (`isset($get_webhook["result"]["id"])`).
+- Order note on settle is now written only alongside the invoice, so repeated notifications no
+  longer append a duplicate note.
+
+Admin configuration screen, after finding it unreadable in a multi-store setup:
+
+- **Webhook registration now targets the scope being edited.** `DataHelper::getPaymentManager()`
+  resolved the credentials from the *current* store, which in the admin area is store 0 — i.e. the
+  **default** scope. Registering the webhook while editing a website therefore acted on the default
+  NetPay account, silently. The scope now travels from the form (`website=`/`store=` in the admin
+  URL) to the controller, `getPaymentManager()` accepts an explicit store id, and the confirmation
+  message names the scope it acted on. (`Helper/Data.php`,
+  `Controller/Adminhtml/System/Config/UpdateWebhook.php`, `view/adminhtml/templates/.../webhookButton.phtml`)
+- **Scope notice on the credentials group** (`Block/System/Config/Form/Field/ScopeNotice.php`): states
+  which scope is being edited and whether its credentials are its own or inherited from the default.
+  Necessary because the form is identical across scopes and the secret keys render as `******`, so
+  there was no way to tell whose account was on screen.
+- **Clearer labels and help text.** `Public Key For Test` → `Public Key (Test)`, plus per-field
+  comments on what each key is for and why the secrets always show as asterisks. The webhook field's
+  help text now explains what the URL is for and states that card payments are settled at checkout
+  and never notified there.
+- **Spanish translations** (`i18n/es_MX.csv`, `i18n/es_CO.csv`) for every admin-facing string; the
+  module previously shipped no `i18n/` at all, so labels rendered in English inside a Spanish admin.
+
 ## 1.0.13
 
 Security and robustness pass from a full comparative audit vs the WooCommerce plugin:
