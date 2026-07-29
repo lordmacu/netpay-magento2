@@ -23,6 +23,11 @@ parameters:
 		-
 			message: "#^Call to an undefined method Magento\\\\Framework\\\\Data\\\\Form\\\\Element\\\\AbstractElement\\:\\:unsScope\\(\\)\\.$#"
 			count: 1
+			path: Block/System/Config/Form/Field/ScopeNotice.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Framework\\\\Data\\\\Form\\\\Element\\\\AbstractElement\\:\\:unsScope\\(\\)\\.$#"
+			count: 1
 			path: Block/System/Config/Form/Field/WebhookButton.php
 
 		-
@@ -32,6 +37,11 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$hookUrl\\.$#"
+			count: 1
+			path: Controller/Adminhtml/System/Config/UpdateWebhook.php
+
+		-
+			message: "#^Call to an undefined method Magento\\\\Store\\\\Api\\\\Data\\\\WebsiteInterface\\:\\:getDefaultStore\\(\\)\\.$#"
 			count: 1
 			path: Controller/Adminhtml/System/Config/UpdateWebhook.php
 
@@ -66,12 +76,17 @@ parameters:
 			path: Controller/Payment/ApiController.php
 
 		-
-			message: "#^Offset 'result' on array\\{result\\: 'error'\\|'ignored'\\|'success', message\\: string\\} in empty\\(\\) always exists and is not falsy\\.$#"
+			message: "#^Call to an undefined method Magento\\\\Sales\\\\Api\\\\Data\\\\OrderStatusHistoryInterface\\:\\:save\\(\\)\\.$#"
+			count: 2
+			path: Controller/Payment/ApiController.php
+
+		-
+			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\n     \", expected type at offset 114$#"
 			count: 1
 			path: Controller/Payment/ApiController.php
 
 		-
-			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\r\\\\n     \", expected type at offset 91$#"
+			message: "#^PHPDoc tag @return has invalid value \\(\\)\\: Unexpected token \"\\\\n     \", expected type at offset 86$#"
 			count: 1
 			path: Controller/Payment/ApiController.php
 
@@ -127,7 +142,7 @@ parameters:
 
 		-
 			message: "#^Call to an undefined method Magento\\\\Sales\\\\Model\\\\Order\\\\Invoice\\:\\:setRequestedCaptureCase\\(\\)\\.$#"
-			count: 1
+			count: 2
 			path: Helper/Data.php
 
 		-
@@ -247,7 +262,7 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$phone\\.$#"
-			count: 2
+			count: 1
 			path: Model/ChargesApiManagement.php
 
 		-
@@ -277,6 +292,11 @@ parameters:
 
 		-
 			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$token\\.$#"
+			count: 1
+			path: Model/ChargesApiManagement.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$transactionType\\.$#"
 			count: 1
 			path: Model/ChargesApiManagement.php
 
@@ -469,6 +489,56 @@ parameters:
 			message: "#^Property Netpay\\\\Payment\\\\Model\\\\CustomerLinkRepository\\:\\:\\$searchCriteriaBuilder is never read, only written\\.$#"
 			count: 1
 			path: Model/CustomerLinkRepository.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$amount\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$billingEmail\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$billingFirstName\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$billingLastName\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$currency\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$description\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$paymentmethod\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$source\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$transactionTokenId\\.$#"
+			count: 1
+			path: Model/Netpay.php
+
+		-
+			message: "#^Access to an undefined property Magento\\\\Framework\\\\DataObject\\:\\:\\$transactionType\\.$#"
+			count: 1
+			path: Model/Netpay.php
 
 		-
 			message: "#^PHPDoc tag @param for parameter \\$payment with type Magento\\\\Framework\\\\DataObject\\|Magento\\\\Payment\\\\Model\\\\InfoInterface is not subtype of native type Magento\\\\Payment\\\\Model\\\\InfoInterface\\.$#"

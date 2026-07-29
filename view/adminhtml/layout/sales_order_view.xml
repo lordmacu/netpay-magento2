@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="order_additional_info">
+            <block class="Netpay\Payment\Block\Adminhtml\Order\PreauthInfo"
+                   name="netpay_preauth_info"
+                   template="Netpay_Payment::order/preauth_info.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

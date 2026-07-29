@@ -64,6 +64,12 @@
                         <label>Description</label>
                         <config_path>payment/netpay/description</config_path>
                     </field>
+                    <field id="preauth_mode" translate="label comment" type="select" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Payment Action</label>
+                        <config_path>payment/netpay/preauth_mode</config_path>
+                        <source_model>Netpay\Payment\Model\Adminhtml\Source\PaymentAction</source_model>
+                        <comment><![CDATA[Pre-authorization (NetPay Check-in/Check-out): checkout only holds the amount; the charge happens when the invoice is created with "Capture Online" (quantities can be adjusted; NetPay accepts a final amount within 20% of the held one). The hold expires after 5 business days (Visa/MC). Requires Check-in/Check-out enabled on the NetPay account. Installments (MSI) are disabled while pre-authorization is active.]]></comment>
+                    </field>
                     <field id="accept_visa" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Show Visa icon</label>
                         <config_path>payment/netpay/accept_visa</config_path>

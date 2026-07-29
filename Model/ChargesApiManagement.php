@@ -230,6 +230,13 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
             $others->source = $token;
             $others->referenceID = $referenceID;
 
+            $isPreauth = $this->configHelper->isPreauthEnabled((int) $order->getStoreId());
+            if ($isPreauth) {
+                // Check-in (pre-authorization): hold the funds, capture later on invoice.
+                // https://docs.netpay.com.mx/reference/check-in-pre-autorizacion
+                $others->transactionType = 'PreAuth';
+            }
+
             $deviceArray = json_decode($deviceInformation);
             $others->deviceInformation = $deviceArray;
 
@@ -342,6 +349,16 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
                         $order->addCommentToStatusHistory('NetPay lastFourDigits: ' . $card->lastFourDigits);
                     }
                 }
+                if (!empty($isPreauth) && $paymentmethod == 'card') {
+                    // PostAuth (capture) requires both the transaction token and the original
+                    // card source token, so persist them on the payment now — the source token
+                    // is not recoverable later. https://docs.netpay.com.mx/reference/check-out-post-autorizacion
+                    /** @var \Magento\Sales\Model\Order\Payment $payment */
+                    $payment = $order->getPayment();
+                    $payment->setAdditionalInformation('netpay_preauth', true);
+                    $payment->setAdditionalInformation('netpay_source_token', (string) $token);
+                    $payment->setAdditionalInformation('netpay_preauth_amount', (float) $order->getBaseGrandTotal());
+                }
             }
             $order->save();
         } catch (\Exception $ex) {
@@ -352,21 +369,28 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
             throw new \Magento\Framework\Exception\CouldNotDeleteException(__('Ha ocurrido un error, por favor. Intente realizar el pedido de nuevo'));
         }
         if ($paymentmethod == 'card') {
-            if ($charges->status == "success") {
+            // NetPay is inconsistent about status casing across responses (e.g. lowercase "chargeable"
+            // on the immediate charge vs uppercase "CHARGEABLE" on a GetOrder re-read) — normalize once.
+            $normalizedStatus = strtolower((string) ($charges->status ?? ''));
+            if ($normalizedStatus == "success" || $normalizedStatus == "chargeable") {
+                // "chargeable" = an approved PreAuth hold (funds reserved, not yet captured). Treat it
+                // the same as a normal approved sale here; Controller/Payment/Reside.php already
+                // recognizes the held state (DONE/CHARGEABLE) when it re-reads the transaction for the
+                // redirect target.
                 $varAccept = new DataObject();
                 $status = 'success';
                 $url = $others->merchantRedirectUrl . '?transaction_token=' . $charges->transactionTokenId . '&threed=no';
                 $varAccept->status = $status;
                 $varAccept->url = $url;
                 return json_encode($varAccept);
-            } elseif ($charges->status == "review") {
+            } elseif ($normalizedStatus == "review") {
                 // 3DS: the frontend distinguishes a real challenge (acsUrl+paReq+authenticationTransactionID)
                 // from a frictionless review and drives the confirm accordingly. Pass the charge through on
                 // status alone (matching NetPay's WooCommerce plugin); do NOT gate on returnUrl, which a
                 // frictionless review may not carry (that gate made the flow silently fall through to false).
                 return json_encode($charges);
             }
-            // Terminal decline (failed / rejected / insecure, or any other non-success/review status).
+            // Terminal decline (failed / rejected / insecure, or any other non-success/chargeable/review status).
             // Don't leave the order orphaned as pending: cancel it and return a friendly failure the
             // frontend can surface, matching the WooCommerce plugin (which fails the order).
             $rawMessage = $charges->responseMsg ?? ($charges->status ?? 'declined');

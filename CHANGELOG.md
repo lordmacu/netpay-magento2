@@ -4,6 +4,53 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.15
+
+Pre-authorization support (NetPay **Check-in / Check-out**), off by default:
+
+- **New admin config `payment/netpay/preauth_mode`** (*Payment Action*): direct sale (default,
+  behavior unchanged) or pre-authorization. In pre-auth mode the checkout charge carries
+  `transactionType: "PreAuth"` on the same `v3.5/charges` endpoint, and the order is left with an
+  **open authorization transaction instead of being auto-invoiced**.
+  (`Model/Adminhtml/Source/PaymentAction.php`, `Helper/Config.php`, `etc/adminhtml/system.xml`,
+  `etc/config.xml`)
+  > The key is deliberately **not** `payment/netpay/payment_action`: that path is read by Magento's
+  > `AbstractMethod::getConfigPaymentAction()` and would make the core dispatch an authorize/capture
+  > cycle this module performs out of band (the charge happens over REST after `placeOrder()`).
+- **`capture()` implements Check-out (`PostAuth`)** with the invoice total, so a **partial invoice**
+  (reduced quantities for items that could not be picked) charges the real amount. Validated against
+  NetPay's ±20% rule *before* calling the gateway, with a message telling the operator to cancel and
+  re-charge for anything outside it. (`Model/Netpay.php`)
+- **`void()` / `cancel()` release the hold** through the cancelation endpoint (shared with refunds).
+  Order cancelation is never blocked by a gateway failure — an uncaptured hold expires on its own in
+  ~5 business days — while an explicit admin Void on an **already captured** payment now fails loudly
+  instead of reporting a success that refunds nothing.
+- **Webhook settlement is pre-auth aware**: `CHARGEABLE` registers the authorization (idempotent),
+  `DONE` for a hold captured outside Magento reconciles with an **offline** invoice (an online one
+  would fire a duplicate `PostAuth`), and `DONE` on an already-invoiced order still marks the payment
+  as captured so later void/cancel guards see the real state. (`Controller/Payment/ApiController.php`)
+- **`chargeable` is recognized as approved.** An approved PreAuth returns `chargeable` (lowercase),
+  not `success`; the charge branch normalizes the case, so a valid pre-authorization is no longer
+  treated as a decline (which cancelled the order while the hold stayed alive on the card).
+  (`Model/ChargesApiManagement.php`)
+- **Invoice email on capture**: the customer automatically receives the native invoice email when the
+  capture succeeds — only the invoiced items and the amount actually charged, i.e. the final receipt.
+  (`etc/events.xml`, `Observer/SendCaptureInvoiceEmail.php`)
+- **Admin order-view banner** with the state of the hold (held / captured / released / never
+  confirmed) and the capture instructions. (`Block/Adminhtml/Order/PreauthInfo.php`,
+  `view/adminhtml/`)
+- **MSI (installments) disabled** in pre-auth mode; the card `source` token and the held amount are
+  persisted on the payment (`netpay_preauth`, `netpay_source_token`, `netpay_preauth_amount`,
+  `netpay_authorized`, `netpay_captured`, `netpay_hold_released`) because `PostAuth` needs them and
+  the source token is not recoverable later. (`Helper/Data.php`, `Model/ChargesApiManagement.php`)
+- SDK: `transactionType` / `transactionTokenId` on the `Charges` request model plus the `[Capture]`
+  feature wiring. Null fields are omitted from serialization, so the direct-sale request body is
+  byte-identical to 1.0.14. (`Sdk/lib/Model/Charges.php`, `Sdk/config/*.ini`,
+  `test/sdk/ChargesModelPreauthTest.php`)
+
+Out of scope for this release: `ReAuth` (raising a hold), adding/substituting items on an existing
+order, and `NoShow` (hotel-specific).
+
 ## 1.0.14
 
 Webhook receiver aligned with the WooCommerce plugin's event contract

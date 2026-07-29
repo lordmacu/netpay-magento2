@@ -24,6 +24,9 @@ so there is no separate `netpay/custom` Composer dependency. Guzzle is not vendo
 - **Webhook receiver** — OXXO settlement + generic card reconciliation (re-verifies the transaction
   against the gateway; idempotent).
 - **Refunds** — admin online credit memos refund through NetPay (full refunds).
+- **Pre-authorization (Check-in / Check-out)** — optional mode where checkout only **holds** the
+  amount and the merchant captures the real total from the admin invoice (`PostAuth`, ±20%);
+  cancelling releases the hold.
 - **Multi-store aware** — every config read (keys / mode / gateway host) is scoped to the order's
   store, including the webhook (which carries no store context) and the charge.
 - **Friendly error messages** — ~60 raw gateway responses mapped to friendly Spanish messages.
@@ -80,10 +83,50 @@ payment/netpay/public_key_test   pk_...
 payment/netpay/secret_key_test   sk_...
 payment/netpay/public_key_live   pk_...
 payment/netpay/secret_key_live   sk_...
+payment/netpay/preauth_mode      authorize_capture   # or `authorize` (pre-authorization)
 ```
 
 > The **secret key** is only ever used server-side (to build the SDK `PaymentManager`); it is never
 > exposed to the browser. The checkout config only carries the public key.
+
+## Pre-authorization (Check-in / Check-out)
+
+*Payment Methods → NetPay → NetPay Credit Card → **Payment Action***:
+
+- **Direct sale (charge immediately)** — default (`authorize_capture`). Unchanged behavior: the charge
+  is captured at checkout and the order is invoiced automatically.
+- **Pre-authorization (hold now, capture on invoice)** — `authorize`. The checkout only **holds** the
+  order total ([Check-in](https://docs.netpay.com.mx/reference/check-in-pre-autorizacion), sent as
+  `transactionType: "PreAuth"` on the same `POST v3.5/charges`); the order stays in *Processing* with
+  an open authorization transaction and **no invoice**.
+
+To **charge the real amount** (items missing or removed while picking the order):
+*Sales → Orders → View → Invoice*, adjust *Qty to Invoice* (0 for what is missing), set
+*Amount: **Capture Online*** and *Submit Invoice* → that fires
+[Check-out / PostAuth](https://docs.netpay.com.mx/reference/check-out-post-autorizacion) for the
+invoice total. NetPay accepts a final amount between **−20% and +20%** of the held one; outside that
+range the capture is rejected with an explicit message — cancel the order (releasing the hold) and
+charge again.
+
+Also in this mode:
+
+- **Cancelling** the order releases the hold (the cancelation endpoint shared with refunds). An
+  uncaptured hold expires on its own after **5 business days** (Visa/Mastercard) or 7 (Amex);
+  capturing after that fails, so cancel and re-charge instead.
+- The customer gets the **invoice email** automatically when the capture succeeds — it lists only the
+  invoiced items and the amount actually charged, i.e. the final receipt.
+- The admin order view shows a banner with the state of the hold (held / captured / released / never
+  confirmed) plus the capture instructions.
+- **Installments (MSI) are disabled**: a plan fixed at PreAuth time is incompatible with capturing a
+  different amount later.
+- OXXO / cash (`netpaycash`) is unaffected.
+- The NetPay account must have **Check-in/Check-out enabled** — confirm it with your account manager
+  before going live.
+
+Magento sends no email when an order is cancelled, and its "New Order" email does not mention holds,
+so two operational steps are recommended: add a line to the order-confirmation template explaining
+that the amount shown is a hold whose final charge may be lower, and when cancelling a
+pre-authorized order add a status comment with *Notify Customer by Email* checked.
 
 ## 3-D Secure flow
 

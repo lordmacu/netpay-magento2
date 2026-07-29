@@ -62,6 +62,24 @@ class Config extends AbstractHelper
     /** @var string */
     const XML_PATH_SECRET_KEY_LIVE = 'payment/netpay/secret_key_live';
 
+    /**
+     * Pre-auth mode config path: authorize_capture (direct sale) | authorize (pre-authorization).
+     *
+     * MUST NOT be named 'payment_action' (or live under any other method's 'payment_action' key):
+     * Magento\Payment\Model\Method\AbstractMethod::getConfigPaymentAction() reads
+     * getConfigData('payment_action'), and Magento\Sales\Model\Order\Payment::place() dispatches the
+     * native authorize/capture lifecycle on whatever that returns. This module charges out of band
+     * (a REST call after the order is already placed), so placeOrder() must see an empty payment
+     * action and take no native action. Reusing 'payment_action' previously made Magento call
+     * authorize() (unimplemented here -> "The authorize action is not available") in pre-auth mode,
+     * and capture() (auto-invoicing before the charge is confirmed) in direct-sale mode.
+     */
+    const XML_PATH_PREAUTH_MODE = 'payment/netpay/preauth_mode';
+
+    const PAYMENT_ACTION_AUTHORIZE = 'authorize';
+
+    const PAYMENT_ACTION_AUTHORIZE_CAPTURE = 'authorize_capture';
+
     /** @var StoreManagerInterface */
     protected $storeManager;
 
@@ -135,7 +153,32 @@ class Config extends AbstractHelper
             $storeId
         );
     }
-    
+
+    /**
+     * Whether the pre-authorization (Check-in/Check-out) flow is enabled for the store.
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isPreauthEnabled($storeId = null)
+    {
+        return $this->getPreauthMode($storeId) === self::PAYMENT_ACTION_AUTHORIZE;
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getPreauthMode($storeId = null)
+    {
+        $value = $this->getScopeConfig()->getValue(
+            self::XML_PATH_PREAUTH_MODE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+        return $value ?: self::PAYMENT_ACTION_AUTHORIZE_CAPTURE;
+    }
+
     /**
      * Get Credit Card is enable or disable
      *

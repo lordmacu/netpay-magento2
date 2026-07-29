@@ -245,7 +245,47 @@ class ApiController extends Action implements CsrfAwareActionInterface, HttpPost
                 return ['result' => 'ignored', 'message' => 'Transaction does not match the notification'];
             }
             // Idempotent: a repeated notification must not re-invoice or duplicate the note.
-            if ($order->canInvoice()) {
+            /** @var \Magento\Sales\Model\Order\Payment|null $payment */
+            $payment = $order->getPayment();
+            $isPreauth = $payment && $payment->getAdditionalInformation('netpay_preauth');
+            if ($isPreauth && !$payment->getAdditionalInformation('netpay_captured')) {
+                if ($status === 'CHARGEABLE') {
+                    // Pre-auth confirmed by webhook (e.g. after an async 3DS): register the
+                    // authorization; the merchant captures from the admin invoice.
+                    $this->dataHelper->registerAuthorization($order);
+                } elseif ($status === 'DONE') {
+                    // DONE without a Magento-side capture: the hold was captured outside
+                    // Magento (NetPay dashboard). The flag must be set regardless of whether an
+                    // invoice can still be created -- otherwise Netpay::void()'s netpay_captured
+                    // guard never trips, and a later Void would refund money that was already
+                    // captured (real money, no matching credit memo).
+                    $payment->setAdditionalInformation('netpay_captured', true);
+                    if ($order->canInvoice()) {
+                        // Reconcile with an OFFLINE invoice — an online one would fire
+                        // capture() and send a duplicate PostAuth.
+                        $this->dataHelper->generateOfflineInvoice($order);
+                        // Same two-statement form as the sibling branch below: chaining save()
+                        // onto addCommentToStatusHistory() saves the history object, not the order.
+                        $order->addCommentToStatusHistory(
+                            'NetPay webhook: transaction captured outside Magento — order settled.'
+                        );
+                        $order->save();
+                    } else {
+                        // Nothing left to invoice (e.g. a manual Capture Offline already ran
+                        // before this notification arrived) — just mark the payment captured so
+                        // later guards (void/cancel) see the real state.
+                        // addCommentToStatusHistory() returns the history object, not the order —
+                        // save the ORDER explicitly so both the payment's netpay_captured flag and
+                        // the comment (staged in-memory via addStatusHistory()) are persisted; a
+                        // save chained onto the history object alone would only write the comment.
+                        $order->addCommentToStatusHistory(
+                            'NetPay webhook: transaction captured outside Magento — order was '
+                            . 'already invoiced, marked as captured.'
+                        );
+                        $order->save();
+                    }
+                }
+            } elseif ($order->canInvoice()) {
                 $this->dataHelper->generateInvoice($order);
                 $order->addCommentToStatusHistory(
                     'NetPay webhook: transaction ' . $status . ' — order settled.'
