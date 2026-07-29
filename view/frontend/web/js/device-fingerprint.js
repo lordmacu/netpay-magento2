@@ -16,7 +16,11 @@ define([], function () {
      */
     return function doProfile(orgId) {
         var length = 30,
-            chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!',
+            // Alphanumeric ONLY: NetPay's widget rejects the token request with
+            // "Empty or invalid fingerprint" unless deviceFingerPrint matches /^[a-z0-9]+$/i.
+            // The WooCommerce script this was ported from also seeds "!" into the pool, which
+            // made roughly 38% of checkout sessions fail at tokenization.
+            chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
             base = 'https://h.online-metrix.net/fp/tags',
             sessionId = '',
             i,
