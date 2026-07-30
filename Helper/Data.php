@@ -94,9 +94,22 @@ class Data extends AbstractHelper
         return $this->checkoutSession->getQuote();
     }
 
-    public function getPaymentManager()
+    /**
+     * Build a PaymentManager bound to a store's NetPay credentials.
+     *
+     * @param int|null $storeId Store to read the credentials from. Defaults to the current store,
+     *                          which is what the storefront wants. Adminhtml callers MUST pass the
+     *                          store explicitly: in the admin area the "current store" resolves to
+     *                          the admin store (0), i.e. the *default* scope config — so a merchant
+     *                          configuring a specific website would otherwise act on the wrong
+     *                          NetPay account.
+     * @return PaymentManager
+     */
+    public function getPaymentManager($storeId = null)
     {
-        $storeId = $this->configHelper->getStoreId();
+        if ($storeId === null) {
+            $storeId = $this->configHelper->getStoreId();
+        }
         $backofficeParams = [
             'secret_key_test' =>  $this->configHelper->getSecretKeyTest($storeId),
             'secret_key_live' => $this->configHelper->getSecretKeyLive($storeId),
@@ -130,9 +143,100 @@ class Data extends AbstractHelper
 
         $transaction->save();
     }
-    
+
+    /**
+     * Invoice an order whose payment was already captured at the gateway (offline capture).
+     *
+     * @param \Magento\Sales\Model\Order $order
+     */
+    public function generateOfflineInvoice($order)
+    {
+        if (!$order->canInvoice()) {
+            return;
+        }
+        $invoice = $this->invoiceService->prepareInvoice($order);
+        $invoice->setRequestedCaptureCase(Invoice::CAPTURE_OFFLINE);
+        $invoice->register();
+        $transaction = $this->transactionFactory->create()
+            ->addObject($invoice)
+            ->addObject($invoice->getOrder());
+        $transaction->save();
+    }
+
+    /**
+     * Settle a gateway-approved card charge on the Magento side.
+     *
+     * Direct sale: the money is already captured, so invoice right away (legacy behavior).
+     * Pre-auth mode: only a hold exists — register an authorization transaction instead;
+     * the merchant captures later from the admin invoice (PostAuth).
+     *
+     * @param \Magento\Sales\Model\Order $order
+     */
+    public function settleApprovedCharge($order)
+    {
+        /** @var \Magento\Sales\Model\Order\Payment|null $payment */
+        $payment = $order->getPayment();
+        if ($payment && $payment->getAdditionalInformation('netpay_preauth')) {
+            $this->registerAuthorization($order);
+            return;
+        }
+        $this->generateInvoice($order);
+    }
+
+    /**
+     * Register the NetPay pre-authorization as an open AUTH transaction on the order.
+     * Idempotent: a repeated webhook or a confirm retry must not duplicate the transaction.
+     *
+     * @param \Magento\Sales\Model\Order $order
+     */
+    public function registerAuthorization($order)
+    {
+        /** @var \Magento\Sales\Model\Order\Payment|null $payment */
+        $payment = $order->getPayment();
+        if (!$payment || $payment->getAdditionalInformation('netpay_authorized')) {
+            return;
+        }
+        $token = (string) $order->getData('token');
+        if ($token === '') {
+            return;
+        }
+        $payment->setTransactionId($token);
+        $payment->setIsTransactionClosed(false);
+        $payment->addTransaction(\Magento\Sales\Api\Data\TransactionInterface::TYPE_AUTH);
+
+        // Magento\Sales\Model\Order\Payment::canCapture() requires a TYPE_ORDER transaction to
+        // exist once the AUTH transaction is closed -- without one, a SECOND Capture Online
+        // invoice (e.g. for the remaining un-invoiced qty after a first partial capture) never
+        // reaches Netpay::capture() at all: Invoice::register() silently falls back to its
+        // offline pay() branch and marks the invoice Paid without any gateway call. Creating this
+        // transaction here keeps canCapture() true for the life of the order, so every invoice
+        // routes through capture() and its guards (see Netpay::capture()'s netpay_captured check).
+        // Distinct, suffixed txn_id: the transaction builder looks up by exact txn_id and would
+        // otherwise reuse/overwrite the AUTH row created just above.
+        $payment->setTransactionId($token . '-order');
+        $payment->setIsTransactionClosed(true);
+        $payment->addTransaction(\Magento\Sales\Api\Data\TransactionInterface::TYPE_ORDER);
+
+        $payment->setBaseAmountAuthorized($order->getBaseGrandTotal());
+        $payment->setAmountAuthorized($order->getGrandTotal());
+        $payment->setAdditionalInformation('netpay_authorized', true);
+        $order->setState(\Magento\Sales\Model\Order::STATE_PROCESSING)
+            ->setStatus(\Magento\Sales\Model\Order::STATE_PROCESSING);
+        $order->addCommentToStatusHistory(
+            'NetPay: pre-authorization registered for '
+            . $order->getBaseCurrency()->formatTxt($order->getBaseGrandTotal())
+            . '. Capture via Invoice -> Capture Online (NetPay allows a final amount within ±20%).'
+            . ' The hold auto-expires in ~5 business days (Visa/MC).'
+        );
+        $order->save();
+    }
+
     public function getMsiValues($total)
     {
+        // Pre-auth mode: installments are incompatible with capturing a different amount later.
+        if ($this->configHelper->isPreauthEnabled()) {
+            return [1 => 1];
+        }
         // Per-product MSI gating (matches WooCommerce's promotion_products): if any cart item is not
         // MSI-eligible, offer a single payment only.
         if (!$this->cartAllowsMsi()) {

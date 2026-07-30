@@ -22,8 +22,14 @@ class Comment implements \Magento\Config\Model\Config\CommentInterface
 
     public function getCommentText($elementValue)
     {
-        $url = $this->urlInterface->getBaseUrl();
+        $url = $this->urlInterface->getBaseUrl() . 'netpay/payment/apicontroller';
 
-        return 'Insert a Hook URL. For this Shop you will find the Hook in ' . $url . 'netpay/payment/apicontroller';
+        return (string) __(
+            'URL where NetPay notifies asynchronous payments (OXXO). For this store it is %1. '
+            . 'It is registered per NetPay account with the button below, and NetPay must be able '
+            . 'to reach it over HTTPS. Card payments are settled during checkout and are not '
+            . 'notified here.',
+            $url
+        );
     }
 }

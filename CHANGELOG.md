@@ -4,6 +4,111 @@ Community port of NetPay's official Magento module (built for Magento 2.4.6, ZIP
 **Magento Open Source 2.4.8 / PHP 8.4**, hardened against NetPay's WooCommerce plugin as the
 reference implementation.
 
+## 1.0.15
+
+Pre-authorization support (NetPay **Check-in / Check-out**), off by default:
+
+- **New admin config `payment/netpay/preauth_mode`** (*Payment Action*): direct sale (default,
+  behavior unchanged) or pre-authorization. In pre-auth mode the checkout charge carries
+  `transactionType: "PreAuth"` on the same `v3.5/charges` endpoint, and the order is left with an
+  **open authorization transaction instead of being auto-invoiced**.
+  (`Model/Adminhtml/Source/PaymentAction.php`, `Helper/Config.php`, `etc/adminhtml/system.xml`,
+  `etc/config.xml`)
+  > The key is deliberately **not** `payment/netpay/payment_action`: that path is read by Magento's
+  > `AbstractMethod::getConfigPaymentAction()` and would make the core dispatch an authorize/capture
+  > cycle this module performs out of band (the charge happens over REST after `placeOrder()`).
+- **`capture()` implements Check-out (`PostAuth`)** with the invoice total, so a **partial invoice**
+  (reduced quantities for items that could not be picked) charges the real amount. Validated against
+  NetPay's ±20% rule *before* calling the gateway, with a message telling the operator to cancel and
+  re-charge for anything outside it. (`Model/Netpay.php`)
+- **`void()` / `cancel()` release the hold** through the cancelation endpoint (shared with refunds).
+  Order cancelation is never blocked by a gateway failure — an uncaptured hold expires on its own in
+  ~5 business days — while an explicit admin Void on an **already captured** payment now fails loudly
+  instead of reporting a success that refunds nothing.
+- **Webhook settlement is pre-auth aware**: `CHARGEABLE` registers the authorization (idempotent),
+  `DONE` for a hold captured outside Magento reconciles with an **offline** invoice (an online one
+  would fire a duplicate `PostAuth`), and `DONE` on an already-invoiced order still marks the payment
+  as captured so later void/cancel guards see the real state. (`Controller/Payment/ApiController.php`)
+- **`chargeable` is recognized as approved.** An approved PreAuth returns `chargeable` (lowercase),
+  not `success`; the charge branch normalizes the case, so a valid pre-authorization is no longer
+  treated as a decline (which cancelled the order while the hold stayed alive on the card).
+  (`Model/ChargesApiManagement.php`)
+- **Invoice email on capture**: the customer automatically receives the native invoice email when the
+  capture succeeds — only the invoiced items and the amount actually charged, i.e. the final receipt.
+  (`etc/events.xml`, `Observer/SendCaptureInvoiceEmail.php`)
+- **Admin order-view banner** with the state of the hold (held / captured / released / never
+  confirmed) and the capture instructions. (`Block/Adminhtml/Order/PreauthInfo.php`,
+  `view/adminhtml/`)
+- **MSI (installments) disabled** in pre-auth mode; the card `source` token and the held amount are
+  persisted on the payment (`netpay_preauth`, `netpay_source_token`, `netpay_preauth_amount`,
+  `netpay_authorized`, `netpay_captured`, `netpay_hold_released`) because `PostAuth` needs them and
+  the source token is not recoverable later. (`Helper/Data.php`, `Model/ChargesApiManagement.php`)
+- SDK: `transactionType` / `transactionTokenId` on the `Charges` request model plus the `[Capture]`
+  feature wiring. Null fields are omitted from serialization, so the direct-sale request body is
+  byte-identical to 1.0.14. (`Sdk/lib/Model/Charges.php`, `Sdk/config/*.ini`,
+  `test/sdk/ChargesModelPreauthTest.php`)
+
+Out of scope for this release: `ReAuth` (raising a hold), adding/substituting items on an existing
+order, and `NoShow` (hotel-specific).
+
+## 1.0.14
+
+Webhook receiver aligned with the WooCommerce plugin's event contract
+(`netpay-checkout.php::process_ipn`), after testing the receiver against the real payload shape:
+
+- **Non-OXXO notifications never matched an order (fixed).** The receiver looked the order up by
+  `data.reference` for *every* event. For a non-OXXO charge `sales_order.token` holds the
+  `transactionTokenId`, which NetPay sends as **`data.transactionId`** — so that branch could never
+  find its order, and it also re-verified the wrong id against the gateway. It now resolves and
+  verifies through `data.transactionId`. (`Controller/Payment/ApiController.php`)
+- **Explicit event dispatch.** `cep.paid` (SPEI/CEP) and `oxxopay.paid`, the two events the
+  WooCommerce plugin handles on its cash IPN listener. Any other event is acknowledged with `200`
+  and **logged with its name** instead of being force-fed through the transaction path: a
+  non-payment event (a refund, a chargeback) would still read as a settled transaction on the
+  gateway and would have invoiced the order. The log is where an unknown event name will surface.
+- **Gateway match required before settling.** Following the WooCommerce plugin, a transaction only
+  settles when the gateway's `transactionTokenId` **and** `amount` match the notification (not just
+  the status); OXXO keeps requiring `status == "C"` plus id and amount.
+- **`merchantRefCode` fallback.** Both events fall back to locating the order by its entity id,
+  which the SDK sends as `billing.merchantReferenceCode` on the charge — the field the WooCommerce
+  plugin uses to resolve OXXO notifications.
+- **Empty token no longer matches an arbitrary order.** A notification with no usable identifier
+  filtered `sales_order.token` on `''`, which matches every order that has no NetPay token.
+- **No more PHP warnings on unexpected payloads**, and a malformed body is now rejected as
+  `Invalid payload` instead of being indistinguishable from an unhandled event.
+- **Webhook registration fixed for a fresh account.** Two problems in `UpdateWebhook`
+  (`Controller/Adminhtml/System/Config/UpdateWebhook.php`):
+  1. The "does a webhook already exist?" lookup ran inside the same `try` as the create/update, so
+     a failing lookup aborted the whole action and showed the misleading *"make sure you have cash
+     option enabled in manager"*. It is now isolated, and real failures surface the gateway message.
+  2. Create-vs-update was decided on the `webhook` **value** being empty. NetPay's docs state the
+     record already exists with its id and the `webhook` field starts as `NULL`, so a fresh account
+     took the create (`POST`) branch when it needed the update (`PUT`) one. It now decides on the
+     presence of the record's **id**, matching the WooCommerce plugin
+     (`isset($get_webhook["result"]["id"])`).
+- Order note on settle is now written only alongside the invoice, so repeated notifications no
+  longer append a duplicate note.
+
+Admin configuration screen, after finding it unreadable in a multi-store setup:
+
+- **Webhook registration now targets the scope being edited.** `DataHelper::getPaymentManager()`
+  resolved the credentials from the *current* store, which in the admin area is store 0 — i.e. the
+  **default** scope. Registering the webhook while editing a website therefore acted on the default
+  NetPay account, silently. The scope now travels from the form (`website=`/`store=` in the admin
+  URL) to the controller, `getPaymentManager()` accepts an explicit store id, and the confirmation
+  message names the scope it acted on. (`Helper/Data.php`,
+  `Controller/Adminhtml/System/Config/UpdateWebhook.php`, `view/adminhtml/templates/.../webhookButton.phtml`)
+- **Scope notice on the credentials group** (`Block/System/Config/Form/Field/ScopeNotice.php`): states
+  which scope is being edited and whether its credentials are its own or inherited from the default.
+  Necessary because the form is identical across scopes and the secret keys render as `******`, so
+  there was no way to tell whose account was on screen.
+- **Clearer labels and help text.** `Public Key For Test` → `Public Key (Test)`, plus per-field
+  comments on what each key is for and why the secrets always show as asterisks. The webhook field's
+  help text now explains what the URL is for and states that card payments are settled at checkout
+  and never notified there.
+- **Spanish translations** (`i18n/es_MX.csv`, `i18n/es_CO.csv`) for every admin-facing string; the
+  module previously shipped no `i18n/` at all, so labels rendered in English inside a Spanish admin.
+
 ## 1.0.13
 
 Security and robustness pass from a full comparative audit vs the WooCommerce plugin:

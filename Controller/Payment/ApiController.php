@@ -19,7 +19,21 @@ use Netpay\Payment\Helper\Data as DataHelper;
  * Class ApiController
  */
 class ApiController extends Action implements CsrfAwareActionInterface, HttpPostActionInterface
-{   
+{
+    /**
+     * Events NetPay emits to the registered webhook. Same contract the official NetPay
+     * WooCommerce plugin implements in `netpay-checkout.php::process_ipn()` (hooked on its cash
+     * IPN listener), which is the reference this module is ported from.
+     *
+     * Both are asynchronous "the customer has now paid" notifications — card is settled inline at
+     * checkout, not through here. Anything else is logged and ignored rather than guessed at: a
+     * non-payment event (a refund, a chargeback) would still read as a settled transaction on the
+     * gateway and must not invoice the order.
+     */
+    const EVENT_OXXO_PAID = 'oxxopay.paid';
+    /** SPEI / CEP (Comprobante Electrónico de Pago), settled through `GET /v3/transactions`. */
+    const EVENT_CEP_PAID = 'cep.paid';
+
     /** @var JsonResultFactory */
     protected $jsonResultFactory;
     
@@ -89,82 +103,18 @@ class ApiController extends Action implements CsrfAwareActionInterface, HttpPost
             $this->getResponse()->setHeader('Access-Control-Allow-Headers', 'Content-Type, X-CSRF-Token');
             $this->getResponse()->setHeader('Vary', 'Origin');
             $params = $this->getRequest()->getContent();
-            $body = json_decode($params, true);
-            $result = $this->jsonResultFactory->create();            
+            $body = json_decode((string) $params, true);
+            $result = $this->jsonResultFactory->create();
             try {
                 $ip = $this->get_ip_addr();
-                $ip_in_subnet = $this->ip_in_range( $ip);
-
-                if($ip_in_subnet){
-                    $token = $body['data']['reference'];
-                    $transactionId = $body['data']['transactionId'];
-                    $amount = round((float)$body['data']['amount'], 2);
-                    $event = $body['event'];
-                    $order = $this->getOrderByToken($token);
-                    if ($order !== null) {
-                        // Multi-store: a webhook POST carries no store context, so scope all config
-                        // (keys / mode / gateway URL) to the order's own store, not the default one.
-                        $this->storeManager->setCurrentStore($order->getStoreId());
-                    }
-                    if ($order == null) {
-                        $return = ['result' => 'error', 'message' => 'No Order with the token ' . $token . ' exist!'];
-                    } elseif (round((float)$order->getGrandTotal(), 2) != $amount) {
-                        $return = ['result' => 'error', 'message' => 'The Order with the token ' . $token . ' has a wrong amount!'];
-                    }elseif ($event == 'oxxopay.paid') {
-                        $storeId = $this->configHelper->getStoreId();
-                        $sk = ($this->configHelper->getPaymentMode($storeId) == 'test') ? $this->configHelper->getSecretKeyTest($storeId) : $this->configHelper->getSecretKeyLive($storeId);
-                        $header = array('Content-Type: application/json','Authorization: ' . $sk);
-                        $baseUrl = ($this->configHelper->getPaymentMode($storeId) == 'test') ? 'https://gateway-154.netpaydev.com/gateway-ecommerce/' : 'https://suite.netpay.com.mx/gateway-ecommerce/';
-                        $url = $baseUrl . 'v3/oxxopay/transaction/' . $transactionId;
-                        $ch = curl_init();
-                        curl_setopt($ch, CURLOPT_URL, $url); 
-                        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                        curl_setopt($ch, CURLOPT_HTTPHEADER, $header); 
-                        curl_setopt($ch, CURLOPT_HEADER, 0); 
-                        $a1 = curl_exec($ch);
-                        curl_close($ch); 
-                        $data = json_decode($a1);
-                        if($data->status == "C" && $data->transactionId == $transactionId && $data->amount == $amount && $data->reference == $token){
-                            $this->dataHelper->generateInvoice($order);
-                            $return = ['result' => 'success', 'message' => 'Successful Updated'];
-                            $result->setHttpResponseCode(200);
-                        }else{
-                            $return = ['result' => 'error', 'message' => 'Order has the status2' . $event . ' in Netpay'];
-                        }
-                    } else {
-                        // Card (or any non-OXXO) event: don't trust the webhook payload's status.
-                        // Re-verify the transaction against the gateway (source of truth) using the
-                        // order's own token and reconcile — settle on DONE/CHARGEABLE, cancel on
-                        // FAILED/REJECT. Robust to NetPay's exact card webhook event name/shape.
-                        $paymentManager = $this->dataHelper->getPaymentManager();
-                        $paymentManager->setUrlAttributes([$token]);
-                        $transaction = $paymentManager->getOrder();
-                        $status = strtoupper((string) ($transaction->status ?? ''));
-                        if (in_array($status, ['DONE', 'CHARGEABLE'], true)) {
-                            if ($order->canInvoice()) {
-                                $this->dataHelper->generateInvoice($order);
-                            }
-                            // Leave an audit-trail note on the order (matches the WooCommerce plugin).
-                            $order->addCommentToStatusHistory(
-                                'NetPay webhook: transaction ' . $status . ' — order settled.'
-                            )->save();
-                            $return = ['result' => 'success', 'message' => 'Order settled'];
-                            $result->setHttpResponseCode(200);
-                        } elseif (in_array($status, ['FAILED', 'REJECT', 'REJECTED'], true)) {
-                            if ($order->canCancel()) {
-                                $order->registerCancellation(
-                                    'NetPay webhook: ' . ($transaction->responseMsg ?? $status)
-                                )->save();
-                            }
-                            $return = ['result' => 'success', 'message' => 'Order cancelled'];
-                            $result->setHttpResponseCode(200);
-                        } else {
-                            $return = ['result' => 'ignored', 'message' => 'Transaction status ' . $status];
-                            $result->setHttpResponseCode(200);
-                        }
-                    }
-                } else{
+                if (!$this->ip_in_range($ip)) {
                     $return = ['result' => 'error', 'message' => 'Error' . $ip];
+                } elseif (!is_array($body)) {
+                    // Malformed body: reject it as such, so it is distinguishable in the logs
+                    // from a well-formed notification for an event we do not handle.
+                    $return = ['result' => 'error', 'message' => 'Invalid payload'];
+                } else {
+                    $return = $this->handleEvent($body, $result);
                 }
             } catch (\Exception $e) {
                 $return = ['result' => 'error', 'message' => $e->getMessage()];
@@ -187,20 +137,295 @@ class ApiController extends Action implements CsrfAwareActionInterface, HttpPost
     }
     
     /**
+     * Dispatch a webhook notification to the handler for its event.
+     *
+     * NetPay emits two events (same contract the WooCommerce plugin implements): `cep.paid`
+     * (SPEI/CEP) and `oxxopay.paid`. Anything else is acknowledged with 200 and logged, so NetPay
+     * does not keep retrying a notification we do not act on.
+     *
+     * @param array $body   decoded notification
+     * @param mixed $result json result, used to set the HTTP status
+     * @return array
+     */
+    private function handleEvent(array $body, $result)
+    {
+        $data = (isset($body['data']) && is_array($body['data'])) ? $body['data'] : [];
+        $event = (string) ($body['event'] ?? '');
+        $transactionId = (string) ($data['transactionId'] ?? '');
+        $amount = round((float) ($data['amount'] ?? 0), 2);
+
+        if ($event !== self::EVENT_OXXO_PAID && $event !== self::EVENT_CEP_PAID) {
+            $this->logger->debug('Netpay webhook: unhandled event "' . $event . '"');
+            $result->setHttpResponseCode(200);
+            return ['result' => 'ignored', 'message' => 'Unhandled event ' . $event];
+        }
+
+        $order = $this->resolveOrder($event, $data);
+        if ($order === null) {
+            return [
+                'result' => 'error',
+                'message' => 'No Order for event ' . $event . ' (transactionId ' . $transactionId . ') exist!'
+            ];
+        }
+
+        // Multi-store: a webhook POST carries no store context, so scope all config
+        // (keys / mode / gateway URL) to the order's own store, not the default one.
+        $this->storeManager->setCurrentStore($order->getStoreId());
+
+        if (round((float) $order->getGrandTotal(), 2) != $amount) {
+            return [
+                'result' => 'error',
+                'message' => 'The Order ' . $order->getIncrementId() . ' has a wrong amount!'
+            ];
+        }
+
+        return $event === self::EVENT_OXXO_PAID
+            ? $this->settleOxxo($order, $data, $transactionId, $amount, $result)
+            : $this->settleTransaction($order, $transactionId, $amount, $result);
+    }
+
+    /**
+     * Find the order a notification belongs to.
+     *
+     * The identifier differs per payment method, because `sales_order.token` holds a different
+     * value in each (see ChargesApiManagement::getCharges):
+     *   - non-OXXO : the transactionTokenId, which NetPay sends back as `data.transactionId`
+     *   - OXXO     : the OXXO reference, which NetPay sends back as `data.reference`
+     * `data.merchantRefCode` is the fallback for both: the SDK sends the order's entity id as
+     * `billing.merchantReferenceCode` when creating the charge, and the WooCommerce plugin
+     * resolves the OXXO notification through exactly that field.
+     *
+     * @param string $event
+     * @param array  $data
+     * @return \Magento\Sales\Model\Order|null
+     */
+    private function resolveOrder($event, array $data)
+    {
+        $order = $event === self::EVENT_OXXO_PAID
+            ? $this->getOrderByToken((string) ($data['reference'] ?? ''))
+            : $this->getOrderByToken((string) ($data['transactionId'] ?? ''));
+
+        if ($order === null && isset($data['merchantRefCode'])) {
+            $order = $this->getOrderById((int) $data['merchantRefCode']);
+        }
+
+        return $order;
+    }
+
+    /**
+     * Reconcile a SPEI/CEP notification against the gateway.
+     *
+     * Never trusts the payload: it re-reads the transaction from NetPay and requires the same
+     * three matches the WooCommerce plugin requires (status, transactionTokenId, amount) before
+     * settling. On a terminal decline the still-pending order is cancelled so it is not orphaned.
+     *
+     * @param \Magento\Sales\Model\Order $order
+     * @param string $transactionId
+     * @param float  $amount
+     * @param mixed  $result
+     * @return array
+     */
+    private function settleTransaction($order, $transactionId, $amount, $result)
+    {
+        $paymentManager = $this->dataHelper->getPaymentManager();
+        $paymentManager->setUrlAttributes([$transactionId]);
+        $transaction = $paymentManager->getOrder();
+
+        $status = strtoupper((string) ($transaction->status ?? ''));
+        $tokenMatches = ((string) ($transaction->transactionTokenId ?? '')) === $transactionId;
+        $amountMatches = round((float) ($transaction->amount ?? 0), 2) == $amount;
+
+        if (in_array($status, ['DONE', 'CHARGEABLE'], true)) {
+            if (!$tokenMatches || !$amountMatches) {
+                $this->logger->debug(
+                    'Netpay webhook: transaction ' . $transactionId . ' is ' . $status
+                    . ' but does not match the notification (token/amount); not settling.'
+                );
+                $result->setHttpResponseCode(200);
+                return ['result' => 'ignored', 'message' => 'Transaction does not match the notification'];
+            }
+            // Idempotent: a repeated notification must not re-invoice or duplicate the note.
+            /** @var \Magento\Sales\Model\Order\Payment|null $payment */
+            $payment = $order->getPayment();
+            $isPreauth = $payment && $payment->getAdditionalInformation('netpay_preauth');
+            if ($isPreauth && !$payment->getAdditionalInformation('netpay_captured')) {
+                if ($status === 'CHARGEABLE') {
+                    // Pre-auth confirmed by webhook (e.g. after an async 3DS): register the
+                    // authorization; the merchant captures from the admin invoice.
+                    $this->dataHelper->registerAuthorization($order);
+                } elseif ($status === 'DONE') {
+                    // DONE without a Magento-side capture: the hold was captured outside
+                    // Magento (NetPay dashboard). The flag must be set regardless of whether an
+                    // invoice can still be created -- otherwise Netpay::void()'s netpay_captured
+                    // guard never trips, and a later Void would refund money that was already
+                    // captured (real money, no matching credit memo).
+                    $payment->setAdditionalInformation('netpay_captured', true);
+                    if ($order->canInvoice()) {
+                        // Reconcile with an OFFLINE invoice — an online one would fire
+                        // capture() and send a duplicate PostAuth.
+                        $this->dataHelper->generateOfflineInvoice($order);
+                        // Same two-statement form as the sibling branch below: chaining save()
+                        // onto addCommentToStatusHistory() saves the history object, not the order.
+                        $order->addCommentToStatusHistory(
+                            'NetPay webhook: transaction captured outside Magento — order settled.'
+                        );
+                        $order->save();
+                    } else {
+                        // Nothing left to invoice (e.g. a manual Capture Offline already ran
+                        // before this notification arrived) — just mark the payment captured so
+                        // later guards (void/cancel) see the real state.
+                        // addCommentToStatusHistory() returns the history object, not the order —
+                        // save the ORDER explicitly so both the payment's netpay_captured flag and
+                        // the comment (staged in-memory via addStatusHistory()) are persisted; a
+                        // save chained onto the history object alone would only write the comment.
+                        $order->addCommentToStatusHistory(
+                            'NetPay webhook: transaction captured outside Magento — order was '
+                            . 'already invoiced, marked as captured.'
+                        );
+                        $order->save();
+                    }
+                }
+            } elseif ($order->canInvoice()) {
+                $this->dataHelper->generateInvoice($order);
+                $order->addCommentToStatusHistory(
+                    'NetPay webhook: transaction ' . $status . ' — order settled.'
+                )->save();
+            }
+            $result->setHttpResponseCode(200);
+            return ['result' => 'success', 'message' => 'Order settled'];
+        }
+
+        if (in_array($status, ['FAILED', 'REJECT', 'REJECTED'], true)) {
+            if ($order->canCancel()) {
+                $order->registerCancellation(
+                    'NetPay webhook: ' . ($transaction->responseMsg ?? $status)
+                )->save();
+            }
+            $result->setHttpResponseCode(200);
+            return ['result' => 'success', 'message' => 'Order cancelled'];
+        }
+
+        $result->setHttpResponseCode(200);
+        return ['result' => 'ignored', 'message' => 'Transaction status ' . $status];
+    }
+
+    /**
+     * Reconcile an OXXO notification against the gateway.
+     *
+     * Mirrors the WooCommerce plugin: read the OXXO transaction and require status `C` (paid)
+     * plus a matching transaction id and amount before invoicing.
+     *
+     * @param \Magento\Sales\Model\Order $order
+     * @param array  $data
+     * @param string $transactionId
+     * @param float  $amount
+     * @param mixed  $result
+     * @return array
+     */
+    private function settleOxxo($order, array $data, $transactionId, $amount, $result)
+    {
+        $transaction = $this->fetchOxxoTransaction($transactionId);
+        $payloadReference = (string) ($data['reference'] ?? '');
+
+        $paid = ((string) ($transaction->status ?? '')) === 'C'
+            && ((string) ($transaction->transactionId ?? '')) === $transactionId
+            && round((float) ($transaction->amount ?? 0), 2) == $amount
+            // Only enforced when the notification carries a reference to compare against.
+            && ($payloadReference === '' || ((string) ($transaction->reference ?? '')) === $payloadReference);
+
+        if (!$paid) {
+            return [
+                'result' => 'error',
+                'message' => 'OxxoPay transaction ' . $transactionId . ' is not payed in Netpay'
+            ];
+        }
+
+        if ($order->canInvoice()) {
+            $this->dataHelper->generateInvoice($order);
+            $order->addCommentToStatusHistory(
+                'NetPay webhook: OxxoPay transaction ' . $transactionId . ' paid.'
+            )->save();
+        }
+        $result->setHttpResponseCode(200);
+        return ['result' => 'success', 'message' => 'Successful Updated'];
+    }
+
+    /**
+     * Read an OXXO transaction from the gateway (GET /v3/oxxopay/transaction/{id}).
+     *
+     * The vendored SDK exposes no OXXO transaction feature, so this is a direct call, scoped to
+     * the order's store (the caller sets the current store before we resolve the keys/host).
+     *
+     * @param string $transactionId
+     * @return \stdClass|null
+     */
+    protected function fetchOxxoTransaction($transactionId)
+    {
+        $storeId = $this->configHelper->getStoreId();
+        $isTest = $this->configHelper->getPaymentMode($storeId) == 'test';
+        $sk = $isTest
+            ? $this->configHelper->getSecretKeyTest($storeId)
+            : $this->configHelper->getSecretKeyLive($storeId);
+        $baseUrl = $isTest
+            ? 'https://gateway-154.netpaydev.com/gateway-ecommerce/'
+            : 'https://suite.netpay.com.mx/gateway-ecommerce/';
+
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $baseUrl . 'v3/oxxopay/transaction/' . rawurlencode($transactionId));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Authorization: ' . $sk]);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        $raw = curl_exec($ch);
+
+        return json_decode((string) $raw);
+    }
+
+    /**
      * get Order By Netpay Token
-     * 
+     *
      * @param string $token
      * @return
      */
     private function getOrderByToken($token)
     {
+        // An empty token must never match: filtering on '' would pick up any order that has
+        // no NetPay token at all.
+        if ($token === '') {
+            return null;
+        }
+
         $collection = $this->orderCollection->create()
                 ->addFieldToSelect('*')
-                ->addFieldToFilter('token', $token);
+                ->addFieldToFilter('token', $token)
+                ->setPageSize(1);
         if ($collection->getSize() > 0) {
             return $collection->getFirstItem();
         }
-        
+
+        return null;
+    }
+
+    /**
+     * get Order by its entity id (NetPay's merchantRefCode)
+     *
+     * @param int $entityId
+     * @return
+     */
+    private function getOrderById($entityId)
+    {
+        if ($entityId <= 0) {
+            return null;
+        }
+
+        $collection = $this->orderCollection->create()
+                ->addFieldToSelect('*')
+                ->addFieldToFilter('entity_id', $entityId)
+                ->setPageSize(1);
+        if ($collection->getSize() > 0) {
+            return $collection->getFirstItem();
+        }
+
         return null;
     }
 

@@ -74,7 +74,9 @@ class Charges implements ModelInterface, ArrayAccess
         'sessionId' => 'string',
 'instegrationsdk' => 'string',
 'integrationSdkVersion' => 'string',
-'referenceID' => 'string'    ];
+'referenceID' => 'string',
+'transaction_type' => 'string',
+'transaction_token_id' => 'string'    ];
 
     /**
       * Array of property to format mappings. Used for (de)serialization
@@ -100,7 +102,9 @@ class Charges implements ModelInterface, ArrayAccess
         'sessionId' => null,
 'instegrationsdk' => null,
 'integrationSdkVersion' => null,
-'referenceID' => null];
+'referenceID' => null,
+'transaction_type' => null,
+'transaction_token_id' => null];
 
     /**
      * Array of property to type mappings. Used for (de)serialization
@@ -147,7 +151,9 @@ class Charges implements ModelInterface, ArrayAccess
         'sessionId' => 'sessionId',
 'instegrationsdk' => 'instegrationsdk',
 'integrationSdkVersion' => 'integrationSdkVersion',
-'referenceID' => 'referenceID'   ];
+'referenceID' => 'referenceID',
+'transaction_type' => 'transactionType',
+'transaction_token_id' => 'transactionTokenId'   ];
 
     /**
      * Array of attributes to setter functions (for deserialization of responses)
@@ -173,7 +179,9 @@ class Charges implements ModelInterface, ArrayAccess
         'sessionId' => 'setSessionId',
 'instegrationsdk' => 'setInstegrationsdk',
 'integrationSdkVersion' => 'setIntegrationSdkVersion',
-'referenceID' => 'setReferenceId'];
+'referenceID' => 'setReferenceId',
+'transaction_type' => 'setTransactionType',
+'transaction_token_id' => 'setTransactionTokenId'];
 
     /**
      * Array of attributes to getter functions (for serialization of requests)
@@ -199,7 +207,9 @@ class Charges implements ModelInterface, ArrayAccess
         'sessionId' => 'getSessionId',
 'instegrationsdk' => 'getInstegrationsdk',
 'integrationSdkVersion' => 'getIntegrationSdkVersion',
-'referenceID' => 'getReferenceId'];
+'referenceID' => 'getReferenceId',
+'transaction_type' => 'getTransactionType',
+'transaction_token_id' => 'getTransactionTokenId'];
 
     /**
      * Array of attributes where the key is the local name,
@@ -278,6 +288,8 @@ class Charges implements ModelInterface, ArrayAccess
         $this->container['instegrationsdk'] = isset($data['instegrationsdk']) ? $data['instegrationsdk'] : null;
         $this->container['integrationSdkVersion'] = isset($data['integrationSdkVersion']) ? $data['integrationSdkVersion'] : null;
         $this->container['referenceID'] = isset($data['referenceID']) ? $data['referenceID'] : null;
+        $this->container['transaction_type'] = isset($data['transaction_type']) ? $data['transaction_type'] : null;
+        $this->container['transaction_token_id'] = isset($data['transaction_token_id']) ? $data['transaction_token_id'] : null;
     }
 
     /**
@@ -860,6 +872,52 @@ class Charges implements ModelInterface, ArrayAccess
     {
         $this->container['sessionId'] = $sessionId;
 
+        return $this;
+    }
+
+    /**
+     * Gets transaction_type
+     *
+     * @return string
+     */
+    public function getTransactionType()
+    {
+        return $this->container['transaction_type'];
+    }
+
+    /**
+     * Sets transaction_type
+     *
+     * @param string $transaction_type NetPay transaction type: PreAuth | PostAuth | ReAuth (absent = direct sale)
+     *
+     * @return $this
+     */
+    public function setTransactionType($transaction_type)
+    {
+        $this->container['transaction_type'] = $transaction_type;
+        return $this;
+    }
+
+    /**
+     * Gets transaction_token_id
+     *
+     * @return string
+     */
+    public function getTransactionTokenId()
+    {
+        return $this->container['transaction_token_id'];
+    }
+
+    /**
+     * Sets transaction_token_id
+     *
+     * @param string $transaction_token_id NetPay transaction token of the pre-authorization being captured/re-authorized
+     *
+     * @return $this
+     */
+    public function setTransactionTokenId($transaction_token_id)
+    {
+        $this->container['transaction_token_id'] = $transaction_token_id;
         return $this;
     }
 

@@ -1,0 +1,36 @@
+<?php
+/**
+ * @var \Netpay\Payment\Block\Adminhtml\Order\PreauthInfo $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+$authorized = (bool) $block->getPaymentInfo('netpay_authorized');
+$captured   = (bool) $block->getPaymentInfo('netpay_captured');
+$released   = (bool) $block->getPaymentInfo('netpay_hold_released');
+$amount     = $block->formatAmount((float) $block->getPaymentInfo('netpay_preauth_amount'));
+$createdAt  = $block->getCreatedAtFormatted();
+$class      = $captured ? 'message-success' : ($released ? 'message-notice' : 'message-warning');
+
+$onHold = __('NetPay: %1 on hold (pre-authorized on %2).', $amount, $createdAt);
+$capturedNote = __('The real amount was already charged (PostAuth). See the invoices and the order comments.');
+$releasedNote = __('The pre-authorization was cancelled; the customer was not charged.');
+$notConfirmedNote = __(
+    'The charge was never authorized (incomplete 3DS or a decline). There is no active hold to capture.'
+);
+// phpcs:ignore Generic.Files.LineLength.TooLong -- the literal is the i18n key; splitting it would break the CSV match
+$howToCapture = __('To charge the real amount: Invoice -> adjust quantities (0 for missing items) -> Amount: "Capture Online" -> Submit Invoice. NetPay allows capturing within 20% above or below the held amount. The hold expires ~5 business days after it was created (Visa/MC; Amex 7). Cancelling the order releases the hold.');
+?>
+<div class="message <?= $escaper->escapeHtmlAttr($class) ?>" style="margin-bottom: 20px;">
+    <?php if ($captured): ?>
+        <strong><?= $escaper->escapeHtml(__('NetPay: pre-authorization captured.')) ?></strong>
+        <?= $escaper->escapeHtml($capturedNote) ?>
+    <?php elseif ($released): ?>
+        <strong><?= $escaper->escapeHtml(__('NetPay: hold released.')) ?></strong>
+        <?= $escaper->escapeHtml($releasedNote) ?>
+    <?php elseif ($authorized): ?>
+        <strong><?= $escaper->escapeHtml($onHold) ?></strong><br/>
+        <?= $escaper->escapeHtml($howToCapture) ?>
+    <?php else: ?>
+        <strong><?= $escaper->escapeHtml(__('NetPay: pre-authorization started but not confirmed.')) ?></strong>
+        <?= $escaper->escapeHtml($notConfirmedNote) ?>
+    <?php endif; ?>
+</div>

@@ -8,35 +8,45 @@
                 <fieldset_css>netpay-section</fieldset_css>
                 <frontend_model>Magento\Paypal\Block\Adminhtml\System\Config\Fieldset\Payment</frontend_model>
                 <attribute type="displayIn">recommended_solutions</attribute>
-                <group id="credentials_configuration" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                <group id="credentials_configuration" translate="label comment" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Netpay Configuration</label>
+                    <comment><![CDATA[Credentials are per scope: each website or store view can operate against a different NetPay account. Use the scope switcher at the top left to configure each one.]]></comment>
+                    <field id="scope_notice" translate="label" sortOrder="0" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label></label>
+                        <frontend_model>Netpay\Payment\Block\System\Config\Form\Field\ScopeNotice</frontend_model>
+                    </field>
                     <field id="enable" translate="label" type="select" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Enable</label>
                         <config_path>payment/netpay/enable</config_path>
                         <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     </field>
-                    <field id="payment_mode" translate="label" type="radios" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <field id="payment_mode" translate="label comment" type="radios" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Mode</label>
                         <source_model>Netpay\Payment\Model\Adminhtml\Source\PaymentMode</source_model>
                         <config_path>payment/netpay/payment_mode</config_path>
+                        <comment>Selects which of the two key pairs below is used. Test keys never move real money.</comment>
                     </field>
-                    <field id="public_key_test" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
-                        <label>Public Key For Test</label>
+                    <field id="public_key_test" translate="label comment" sortOrder="3" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Public Key (Test)</label>
                         <config_path>payment/netpay/public_key_test</config_path>
+                        <comment>Starts with pk_. Used only while Mode is set to Test.</comment>
                     </field>
-                    <field id="secret_key_test" translate="label" sortOrder="1" type="obscure" showInDefault="1" showInWebsite="1" showInStore="1">
-                        <label>Secret Key For Test</label>
+                    <field id="secret_key_test" translate="label comment" sortOrder="4" type="obscure" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Secret Key (Test)</label>
                         <config_path>payment/netpay/secret_key_test</config_path>
                         <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                        <comment>Starts with sk_. Stored encrypted, so it always displays as asterisks once saved.</comment>
                     </field>
-                    <field id="public_key_live" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
-                        <label>Public Key For Live</label>
+                    <field id="public_key_live" translate="label comment" sortOrder="5" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Public Key (Live)</label>
                         <config_path>payment/netpay/public_key_live</config_path>
+                        <comment>Production key. Used only while Mode is set to Live.</comment>
                     </field>
-                    <field id="secret_key_live" translate="label" sortOrder="1" type="obscure" showInDefault="1" showInWebsite="1" showInStore="1">
-                        <label>Secret Key For Live</label>
+                    <field id="secret_key_live" translate="label comment" sortOrder="6" type="obscure" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Secret Key (Live)</label>
                         <config_path>payment/netpay/secret_key_live</config_path>
                         <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                        <comment>Production key. Stored encrypted, so it always displays as asterisks once saved.</comment>
                     </field>
                 </group>
                 <group id="credentials_creditcard" translate="label" type="text" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -53,6 +63,12 @@
                     <field id="description" translate="label" sortOrder="1" type="text" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Description</label>
                         <config_path>payment/netpay/description</config_path>
+                    </field>
+                    <field id="preauth_mode" translate="label comment" type="select" sortOrder="2" showInDefault="1" showInWebsite="1" showInStore="1">
+                        <label>Payment Action</label>
+                        <config_path>payment/netpay/preauth_mode</config_path>
+                        <source_model>Netpay\Payment\Model\Adminhtml\Source\PaymentAction</source_model>
+                        <comment><![CDATA[Pre-authorization (NetPay Check-in/Check-out): checkout only holds the amount; the charge happens when the invoice is created with "Capture Online" (quantities can be adjusted; NetPay accepts a final amount within 20% of the held one). The hold expires after 5 business days (Visa/MC). Requires Check-in/Check-out enabled on the NetPay account. Installments (MSI) are disabled while pre-authorization is active.]]></comment>
                     </field>
                     <field id="accept_visa" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                         <label>Show Visa icon</label>

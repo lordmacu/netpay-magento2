@@ -156,9 +156,9 @@ class Reside extends Action
                 $paymentManager->setUrlAttributes([$transactionId , $processor_transaction_id]);
                 $responseConfirm = $paymentManager->confirm();
                 if ($responseConfirm->status == 'success') {
-                    // Generate the invoice here too (the DONE branch below does the same); otherwise a
-                    // WAIT_THREEDS -> confirm -> success order reached the success page uninvoiced.
-                    $this->dataHelper->generateInvoice($order);
+                    // Settle the charge here too (the DONE branch below does the same); otherwise a
+                    // WAIT_THREEDS -> confirm -> success order reached the success page unsettled.
+                    $this->dataHelper->settleApprovedCharge($order);
                     $this->checkoutSession->setAdditionalInfo($response);
                     return $resultRedirect->setPath(
                             'checkout/onepage/success',
@@ -182,7 +182,7 @@ class Reside extends Action
                     $paymentManager->setUrlAttributes([$transactionId]);
                     $recheck = $paymentManager->getOrder();
                     if (in_array($recheck->status, ['DONE', 'CHARGEABLE'], true)) {
-                        $this->dataHelper->generateInvoice($order);
+                        $this->dataHelper->settleApprovedCharge($order);
                         $this->checkoutSession->setAdditionalInfo($recheck);
                         return $resultRedirect->setPath('checkout/onepage/success', ['_current' => true]);
                     }
@@ -217,9 +217,11 @@ class Reside extends Action
 
         if (in_array($response->status, ['DONE', 'CHARGEABLE'], true)) {
 
-            // Generate an invoice of the order. CHARGEABLE is a valid approved state too — without it
+            // Settle the approved charge. CHARGEABLE is a valid approved state too — without it
             // a frictionless CHARGEABLE order fell into the else branch below and was wrongly cancelled.
-            $this->dataHelper->generateInvoice($order);
+            // In pre-auth mode CHARGEABLE means "held, not captured": settleApprovedCharge() registers
+            // an open AUTH transaction instead of invoicing (see Helper\Data::settleApprovedCharge).
+            $this->dataHelper->settleApprovedCharge($order);
         } else {
             $this->messageManager->addError(
                 __('There is some issue with your credit card.')

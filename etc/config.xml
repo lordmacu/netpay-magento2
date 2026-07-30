@@ -9,6 +9,7 @@
                 <payment_mode>test</payment_mode>
                 <title>Tarjeta (NetPay)</title>
                 <description>Paga de forma segura con tarjeta de crédito o débito.</description>
+                <preauth_mode>authorize_capture</preauth_mode>
                 <accept_visa>1</accept_visa>
                 <accept_mastercard>1</accept_mastercard>
                 <accept_amex>1</accept_amex>

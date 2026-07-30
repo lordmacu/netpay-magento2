@@ -14,11 +14,33 @@ require([
     'prototype'
 ], function(jQuery){
     var customSpan = jQuery('#custom_webhook_netpay_span');
+
+    /**
+     * The config form is scope-aware and each scope may hold a different NetPay account, so the
+     * scope currently being edited (carried in the admin URL as website=/store=) has to travel
+     * with the request. Without it the controller falls back to the default scope.
+     */
+    function currentConfigScope() {
+        var search = window.location.search,
+            scope = {},
+            website = search.match(/[?&]website=([^&]*)/),
+            store = search.match(/[?&]store=([^&]*)/);
+
+        if (website && website[1]) {
+            scope.website = decodeURIComponent(website[1]);
+        }
+        if (store && store[1]) {
+            scope.store = decodeURIComponent(store[1]);
+        }
+
+        return scope;
+    }
+
     jQuery('#webhook_button').click(function () {
-        var params = {
+        var params = jQuery.extend({
             'webhook' : jQuery('input[name="groups[netpay][groups][credentials_cash][fields][webhook][value]"]').val(),
             'payment_mode' : jQuery('input[name="groups[netpay][groups][credentials_configuration][fields][payment_mode][value]"]:checked').val()
-        };
+        }, currentConfigScope());
         new Ajax.Request('<?= $escaper->escapeUrl($block->getCustomUrl()) ?>', {
             parameters:     params,
             loaderArea:     false,
