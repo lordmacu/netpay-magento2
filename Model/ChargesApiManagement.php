@@ -191,10 +191,13 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
      * @param bool $saveCc
      * @param string $cvv
      * @param bool $cardSelected
-     * 
+     * @param string $deviceFingerPrint
+     * @param string $saveToken Second, unused token of the same card, registered as a payment source
+     *                          of the NetPay client after the charge (see the save-card block below).
+     *
      * @return string
      */
-    public function getCharges($referenceID, $orderId, $paymentmethod, $token, $deviceInformation,  $msicount = null, $saveCc = false, $cvv = '', $cardSelected = false, $deviceFingerPrint = '')
+    public function getCharges($referenceID, $orderId, $paymentmethod, $token, $deviceInformation,  $msicount = null, $saveCc = false, $cvv = '', $cardSelected = false, $deviceFingerPrint = '', $saveToken = '')
     {
         if ($paymentmethod == 'savecc') {
             $order = (int) $this->checkoutSession->getData('last_order_id');
@@ -297,7 +300,22 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
             $others->referenceID = $referenceID;
             $paymentManager->setShopdata($order, $others);
             $charges = $paymentManager->getToken();
-            if ($saveCc && $paymentmethod == 'card') {
+            if ($saveCc && $paymentmethod == 'card' && !empty($saveToken) && $order->getCustomerId()) {
+                // Register the card as a payment source of OUR client, using the spare token the
+                // checkout minted for this purpose. Storing only a Magento vault row (the branch
+                // below) is not enough: the checkout offers a saved card only when the same token is
+                // also a source of the NetPay client, and the token that was just charged can no
+                // longer be attached (NetPay answers 409 for a consumed token).
+                // Never let this break the order: the money was already taken at this point.
+                try {
+                    $this->saveSecondCard($saveToken, (int) $order->getCustomerId(), null, $order);
+                } catch (\Exception $saveEx) {
+                    $this->logger->debug(
+                        'NetPay: the card was charged but could not be saved for order '
+                        . $order->getIncrementId() . ': ' . $saveEx->getMessage()
+                    );
+                }
+            } elseif ($saveCc && $paymentmethod == 'card') {
                 $cardDetails = $charges->paymentSource->card;
                 $payment = $order->getPayment();
                 $extensionAttributes = $payment->getExtensionAttributes();

@@ -22,5 +22,5 @@ interface ChargesApiManagementInterface
      *
      * @return string
      */
-    public function getCharges($referenceID, $orderId, $paymentmethod, $token, $deviceInformation,  $msicount = null, $saveCc = false, $cvv = '', $cardSelected = false, $deviceFingerPrint = '');
+    public function getCharges($referenceID, $orderId, $paymentmethod, $token, $deviceInformation,  $msicount = null, $saveCc = false, $cvv = '', $cardSelected = false, $deviceFingerPrint = '', $saveToken = '');
 }
