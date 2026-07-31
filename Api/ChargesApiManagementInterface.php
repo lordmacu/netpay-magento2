@@ -19,6 +19,7 @@ interface ChargesApiManagementInterface
      * @param string $cvv
      * @param bool $cardSelected
      * @param string $deviceFingerPrint
+     * @param string $saveToken
      *
      * @return string
      */
