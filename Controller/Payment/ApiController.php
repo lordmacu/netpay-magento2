@@ -21,18 +21,27 @@ use Netpay\Payment\Helper\Data as DataHelper;
 class ApiController extends Action implements CsrfAwareActionInterface, HttpPostActionInterface
 {
     /**
-     * Events NetPay emits to the registered webhook. Same contract the official NetPay
-     * WooCommerce plugin implements in `netpay-checkout.php::process_ipn()` (hooked on its cash
-     * IPN listener), which is the reference this module is ported from.
+     * Events NetPay emits to the registered webhook.
      *
-     * Both are asynchronous "the customer has now paid" notifications — card is settled inline at
-     * checkout, not through here. Anything else is logged and ignored rather than guessed at: a
-     * non-payment event (a refund, a chargeback) would still read as a settled transaction on the
-     * gateway and must not invoice the order.
+     * These are "the customer has now paid" notifications. Anything else is logged and ignored
+     * rather than guessed at: a non-payment event (a refund, a chargeback) would still read as a
+     * settled transaction on the gateway and must not invoice the order.
      */
     const EVENT_OXXO_PAID = 'oxxopay.paid';
     /** SPEI / CEP (Comprobante Electrónico de Pago), settled through `GET /v3/transactions`. */
     const EVENT_CEP_PAID = 'cep.paid';
+    /**
+     * Card. Observed live against the sandbox on 2026-08-12: NetPay posts one of these for every
+     * approved charge, including the card ones this module settles inline through
+     * `Controller/Payment/Reside`. It is the safety net for the shopper who closes the tab before
+     * being redirected back — the browser never returns, but this still arrives.
+     *
+     * Its payload names two fields differently from the cash events, which is why
+     * `transactionTokenFromPayload()` and `merchantReferenceFromPayload()` exist:
+     *   {"event":"transaction.paid","data":{"transactionTokenId":"…","merchantReferenceCode":"125",
+     *    "status":"CHARGEABLE","amount":59.2,"responseCode":"00","authCode":"222222", …}}
+     */
+    const EVENT_TRANSACTION_PAID = 'transaction.paid';
 
     /** @var JsonResultFactory */
     protected $jsonResultFactory;
@@ -151,10 +160,13 @@ class ApiController extends Action implements CsrfAwareActionInterface, HttpPost
     {
         $data = (isset($body['data']) && is_array($body['data'])) ? $body['data'] : [];
         $event = (string) ($body['event'] ?? '');
-        $transactionId = (string) ($data['transactionId'] ?? '');
+        $transactionId = $this->transactionTokenFromPayload($data);
         $amount = round((float) ($data['amount'] ?? 0), 2);
 
-        if ($event !== self::EVENT_OXXO_PAID && $event !== self::EVENT_CEP_PAID) {
+        if ($event !== self::EVENT_OXXO_PAID
+            && $event !== self::EVENT_CEP_PAID
+            && $event !== self::EVENT_TRANSACTION_PAID
+        ) {
             $this->logger->debug('Netpay webhook: unhandled event "' . $event . '"');
             $result->setHttpResponseCode(200);
             return ['result' => 'ignored', 'message' => 'Unhandled event ' . $event];
@@ -189,9 +201,11 @@ class ApiController extends Action implements CsrfAwareActionInterface, HttpPost
      *
      * The identifier differs per payment method, because `sales_order.token` holds a different
      * value in each (see ChargesApiManagement::getCharges):
-     *   - non-OXXO : the transactionTokenId, which NetPay sends back as `data.transactionId`
+     *   - non-OXXO : the transactionTokenId, sent back as `data.transactionId` by the cash events
+     *                and as `data.transactionTokenId` by `transaction.paid`
      *   - OXXO     : the OXXO reference, which NetPay sends back as `data.reference`
-     * `data.merchantRefCode` is the fallback for both: the SDK sends the order's entity id as
+     * The order's own entity id is the fallback for both — `data.merchantRefCode` on the cash
+     * events, `data.merchantReferenceCode` on `transaction.paid`. The SDK sends it as
      * `billing.merchantReferenceCode` when creating the charge, and the WooCommerce plugin
      * resolves the OXXO notification through exactly that field.
      *
@@ -203,13 +217,46 @@ class ApiController extends Action implements CsrfAwareActionInterface, HttpPost
     {
         $order = $event === self::EVENT_OXXO_PAID
             ? $this->getOrderByToken((string) ($data['reference'] ?? ''))
-            : $this->getOrderByToken((string) ($data['transactionId'] ?? ''));
+            : $this->getOrderByToken($this->transactionTokenFromPayload($data));
 
-        if ($order === null && isset($data['merchantRefCode'])) {
-            $order = $this->getOrderById((int) $data['merchantRefCode']);
+        $merchantReference = $this->merchantReferenceFromPayload($data);
+        if ($order === null && $merchantReference !== '') {
+            $order = $this->getOrderById((int) $merchantReference);
         }
 
         return $order;
+    }
+
+    /**
+     * The gateway transaction token, under either of the two names NetPay uses for it.
+     *
+     * `transaction.paid` calls it `transactionTokenId` — the same name the gateway itself returns
+     * from `GET /v3/transactions` — while the cash events call it `transactionId`. Reading both
+     * keeps every event working off one lookup instead of a per-event special case.
+     *
+     * @param array $data
+     * @return string
+     */
+    private function transactionTokenFromPayload(array $data)
+    {
+        $token = (string) ($data['transactionTokenId'] ?? '');
+
+        return $token !== '' ? $token : (string) ($data['transactionId'] ?? '');
+    }
+
+    /**
+     * The order's own entity id, under either of the two names NetPay uses for it: the fallback
+     * when the token matches no order. `transaction.paid` spells it `merchantReferenceCode`, the
+     * cash events `merchantRefCode`.
+     *
+     * @param array $data
+     * @return string
+     */
+    private function merchantReferenceFromPayload(array $data)
+    {
+        $reference = (string) ($data['merchantReferenceCode'] ?? '');
+
+        return $reference !== '' ? $reference : (string) ($data['merchantRefCode'] ?? '');
     }
 
     /**
