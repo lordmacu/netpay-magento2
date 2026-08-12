@@ -228,7 +228,26 @@ class Data extends AbstractHelper
             . '. Capture via Invoice -> Capture Online (NetPay allows a final amount within ±20%).'
             . ' The hold auto-expires in ~5 business days (Visa/MC).'
         );
-        $order->save();
+
+        try {
+            $order->save();
+        } catch (\Magento\Framework\Exception\AlreadyExistsException $e) {
+            // Someone registered this authorization between the guard above and this save.
+            //
+            // The `netpay_authorized` check is a read-then-write, and there are now two callers
+            // racing to settle the same order: the shopper's browser returning to
+            // Controller\Payment\Reside, and NetPay's `transaction.paid` webhook, which fire within
+            // the same second. Both read the flag unset, both build an AUTH transaction with the
+            // same txn_id, and the loser hits SALES_PAYMENT_TRANSACTION_ORDER_ID_PAYMENT_ID_TXN_ID.
+            //
+            // Losing that race is not a failure: the order IS authorized, by the other caller,
+            // with the identical transaction this one was about to write. Surfacing it as an
+            // exception turns a settled order into a checkout error page for the shopper.
+            $this->logger->debug(
+                'Netpay: order ' . $order->getIncrementId()
+                . ' was already authorized by a concurrent settlement; nothing to do.'
+            );
+        }
     }
 
     public function getMsiValues($total)

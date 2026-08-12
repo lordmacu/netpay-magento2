@@ -578,7 +578,18 @@ class ChargesApiManagement implements \Netpay\Payment\Api\ChargesApiManagementIn
         $alreadyExistPaymentToken = $this->paymentTokenManagement->getByPublicHash($paymentToken->getPublicHash(), $paymentToken->getCustomerId());
 
         if ($alreadyExistPaymentToken != null && $alreadyExistPaymentToken->getData()) {
-            $alreadyExistPaymentToken->setIsActive(1)->setIsVisible(1)->save();
+            // The public hash is derived from the CARD, so paying twice with the same card lands
+            // here. Re-activating the row is not enough: it still holds the token from an earlier
+            // purchase, and CustomConfigProvider only offers a saved card when the vault's token is
+            // ALSO one of the NetPay client's paymentSources. updateClient() above just attached
+            // THIS token over there, so leaving the old one here is precisely what keeps the two
+            // lists from ever intersecting -- the card stays invisible at checkout forever.
+            $alreadyExistPaymentToken->setGatewayToken($token)
+                ->setExpiresAt($expiryDate)
+                ->setTokenDetails($paymentToken->getTokenDetails())
+                ->setIsActive(1)
+                ->setIsVisible(1)
+                ->save();
         } else {
             $this->paymentTokenManagement->saveTokenWithPaymentLink($paymentToken, $payment);
             $extensionAttributes->setVaultPaymentToken($paymentToken);
